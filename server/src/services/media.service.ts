@@ -111,8 +111,8 @@ export async function uploadMomentMedia(
   const fileType = getFileTypeCategory(file.mimetype);
   const originalFilename = generateUniqueFilename(file.originalname);
 
-  let fullUrl: string;
-  let thumbnailUrl: string | undefined;
+  let storageKey: string;
+  let thumbnailKey: string | undefined;
   let width: number | undefined;
   let height: number | undefined;
 
@@ -122,20 +122,20 @@ export async function uploadMomentMedia(
     const thumbnail = await generateThumbnail(file.buffer);
 
     // Upload full image
-    const fullKey = getS3Key(userId, momentId, `full-${originalFilename}`);
-    fullUrl = await uploadToS3(fullKey, processed.buffer, 'image/jpeg');
+    storageKey = getS3Key(userId, momentId, `full-${originalFilename}`);
+    await uploadToS3(storageKey, processed.buffer, 'image/jpeg');
 
     // Upload thumbnail
-    const thumbnailKey = getS3Key(userId, momentId, `thumb-${originalFilename}`);
-    thumbnailUrl = await uploadToS3(thumbnailKey, thumbnail, 'image/jpeg');
+    thumbnailKey = getS3Key(userId, momentId, `thumb-${originalFilename}`);
+    await uploadToS3(thumbnailKey, thumbnail, 'image/jpeg');
 
     width = processed.width;
     height = processed.height;
   } else if (fileType === 'video') {
     // For videos, just upload as-is for now
     // TODO: Add video processing with FFmpeg
-    const videoKey = getS3Key(userId, momentId, originalFilename);
-    fullUrl = await uploadToS3(videoKey, file.buffer, file.mimetype);
+    storageKey = getS3Key(userId, momentId, originalFilename);
+    await uploadToS3(storageKey, file.buffer, file.mimetype);
   } else {
     throw new Error('Unsupported file type');
   }
@@ -144,27 +144,46 @@ export async function uploadMomentMedia(
   const mediaFile = await prisma.mediaFile.create({
     data: {
       momentId,
-      fileName: originalFilename,
       fileType,
-      mimeType: file.mimetype,
+      originalFilename: file.originalname,
+      storageKey,
+      thumbnailKey,
       fileSize: file.size,
-      storageKey: getS3Key(userId, momentId, originalFilename),
-      url: fullUrl,
-      thumbnailUrl,
+      mimeType: file.mimetype,
       width,
       height,
       orderIndex,
     },
   });
 
-  return mediaFile;
+  // Transform to include URLs
+  return {
+    ...mediaFile,
+    url: `http://localhost:9000/${BUCKET_NAME}/${storageKey}`,
+    thumbnailUrl: thumbnailKey ? `http://localhost:9000/${BUCKET_NAME}/${thumbnailKey}` : null,
+    fileName: originalFilename,
+  };
+}
+
+/**
+ * Helper to transform media file to include URLs
+ */
+function transformMediaFile(mediaFile: any) {
+  return {
+    ...mediaFile,
+    url: `http://localhost:9000/${BUCKET_NAME}/${mediaFile.storageKey}`,
+    thumbnailUrl: mediaFile.thumbnailKey
+      ? `http://localhost:9000/${BUCKET_NAME}/${mediaFile.thumbnailKey}`
+      : null,
+    fileName: mediaFile.originalFilename,
+  };
 }
 
 /**
  * Get all media files for a moment
  */
 export async function getMomentMedia(momentId: string) {
-  return prisma.mediaFile.findMany({
+  const mediaFiles = await prisma.mediaFile.findMany({
     where: {
       momentId,
     },
@@ -172,6 +191,8 @@ export async function getMomentMedia(momentId: string) {
       orderIndex: 'asc',
     },
   });
+
+  return mediaFiles.map(transformMediaFile);
 }
 
 /**
@@ -195,9 +216,8 @@ export async function deleteMediaFile(mediaFileId: string, userId: string) {
 
   // Delete from S3
   await deleteFromS3(mediaFile.storageKey);
-  if (mediaFile.thumbnailUrl) {
-    const thumbnailKey = mediaFile.storageKey.replace('full-', 'thumb-');
-    await deleteFromS3(thumbnailKey);
+  if (mediaFile.thumbnailKey) {
+    await deleteFromS3(mediaFile.thumbnailKey);
   }
 
   // Delete from database
