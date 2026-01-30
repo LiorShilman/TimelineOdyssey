@@ -1,6 +1,7 @@
 import prisma from '../config/database.config.js';
 import logger from '../utils/logger.utils.js';
 import { Prisma } from '@prisma/client';
+import { transformMediaFile } from './media.service.js';
 
 export interface CreateMomentInput {
   title: string;
@@ -130,7 +131,11 @@ export async function getMoments(userId: string, filters?: GetMomentsFilters) {
     },
   });
 
-  return moments;
+  // Transform media files to include URLs
+  return moments.map((moment) => ({
+    ...moment,
+    mediaFiles: moment.mediaFiles.map(transformMediaFile),
+  }));
 }
 
 /**
@@ -172,7 +177,11 @@ export async function getMomentById(momentId: string, userId: string) {
     throw new Error('Moment not found');
   }
 
-  return moment;
+  // Transform media files to include URLs
+  return {
+    ...moment,
+    mediaFiles: moment.mediaFiles.map(transformMediaFile),
+  };
 }
 
 /**

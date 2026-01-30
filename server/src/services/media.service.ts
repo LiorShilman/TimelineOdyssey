@@ -168,7 +168,7 @@ export async function uploadMomentMedia(
 /**
  * Helper to transform media file to include URLs
  */
-function transformMediaFile(mediaFile: any) {
+export function transformMediaFile(mediaFile: any) {
   return {
     ...mediaFile,
     url: `http://localhost:9000/${BUCKET_NAME}/${mediaFile.storageKey}`,

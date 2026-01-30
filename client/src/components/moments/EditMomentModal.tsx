@@ -35,8 +35,11 @@ export default function EditMomentModal({ moment, onClose }: EditMomentModalProp
     }
   };
 
-  const handleMediaUploadComplete = (newMedia: MediaFile[]) => {
+  const handleMediaUploadComplete = async (newMedia: MediaFile[]) => {
     setMedia((prev) => [...prev, ...newMedia]);
+    // Refresh the moment in the global store to update 3D view
+    const { fetchMoments } = useMomentStore.getState();
+    await fetchMoments();
   };
 
   const handleDeleteMedia = async (mediaId: string) => {
