@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { Stars, Line } from '@react-three/drei';
 import type { Moment } from '../../types/api.types';
-import { transformMomentsTo3D } from '../../utils/3dHelpers';
+import { transformMomentsTo3D, generateSpiralCurve } from '../../utils/3dHelpers';
 import MomentBubble from './MomentBubble';
 import * as THREE from 'three';
 
@@ -163,74 +163,89 @@ function NebulaCloud({ moments }: { moments: ReturnType<typeof transformMomentsT
 }
 
 /**
- * Glowing spiral path connecting the moments
+ * Glowing spiral path connecting the moments with smooth curves.
+ * Each segment samples many points along the spiral formula so the
+ * path follows the actual curve instead of cutting straight between bubbles.
  */
 function SpiralPath({ moments }: { moments: ReturnType<typeof transformMomentsTo3D> }) {
-  const pathPoints = useMemo(() => {
-    if (moments.length < 2) return [];
-
-    // Sort by position in timeline
-    const sorted = [...moments].sort((a, b) => {
-      const distA = a.position.length();
-      const distB = b.position.length();
-      return distA - distB;
-    });
-
-    return sorted.map(m => m.position);
+  // Sort chronologically and compute each moment's normalizedAge (0–1)
+  const sorted = useMemo(() => {
+    return [...moments].sort((a, b) =>
+      new Date(a.moment.momentDate).getTime() - new Date(b.moment.momentDate).getTime()
+    );
   }, [moments]);
 
-  if (pathPoints.length < 2) return null;
+  // Full smooth curve through all moments (dense sampling)
+  const fullCurve = useMemo(() => {
+    if (sorted.length < 2) return [];
+    const total = sorted.length;
+    const points: THREE.Vector3[] = [];
+    for (let i = 0; i < total - 1; i++) {
+      const tStart = i / (total - 1);
+      const tEnd = (i + 1) / (total - 1);
+      // 40 steps per segment — smooth enough for any zoom level
+      const segment = generateSpiralCurve(tStart, tEnd, 40);
+      // Skip first point of subsequent segments to avoid duplicates
+      points.push(...(i === 0 ? segment : segment.slice(1)));
+    }
+    return points;
+  }, [sorted]);
+
+  // Per-segment curves for individual connection lines + midpoint lights
+  const segments = useMemo(() => {
+    if (sorted.length < 2) return [];
+    const total = sorted.length;
+    return sorted.map((_, i) => {
+      if (i === total - 1) return null;
+      const tStart = i / (total - 1);
+      const tEnd = (i + 1) / (total - 1);
+      const curve = generateSpiralCurve(tStart, tEnd, 40);
+      // Midpoint for the light source
+      const mid = curve[Math.floor(curve.length / 2)];
+      return { curve, mid };
+    }).filter(Boolean) as { curve: THREE.Vector3[]; mid: THREE.Vector3 }[];
+  }, [sorted]);
+
+  if (fullCurve.length < 2) return null;
 
   return (
     <>
-      {/* Main glowing spiral line using Line from drei */}
+      {/* Outer glow — thickest, most transparent */}
       <Line
-        points={pathPoints}
-        color="#9370DB"
-        lineWidth={3}
-        transparent
-        opacity={0.6}
-      />
-
-      {/* Secondary thicker glow effect */}
-      <Line
-        points={pathPoints}
+        points={fullCurve}
         color="#8B5CF6"
         lineWidth={8}
         transparent
         opacity={0.15}
       />
 
-      {/* Connection lines between consecutive moments */}
-      {pathPoints.map((point, i) => {
-        if (i === pathPoints.length - 1) return null;
-        const nextPoint = pathPoints[i + 1];
+      {/* Main glowing spiral */}
+      <Line
+        points={fullCurve}
+        color="#9370DB"
+        lineWidth={3}
+        transparent
+        opacity={0.6}
+      />
 
-        return (
-          <group key={i}>
-            {/* Thin connecting line */}
-            <Line
-              points={[point, nextPoint]}
-              color="#A78BFA"
-              lineWidth={1.5}
-              transparent
-              opacity={0.3}
-            />
-
-            {/* Light source along the path */}
-            <pointLight
-              position={[
-                (point.x + nextPoint.x) / 2,
-                (point.y + nextPoint.y) / 2,
-                (point.z + nextPoint.z) / 2
-              ]}
-              color="#9370DB"
-              intensity={0.5}
-              distance={3}
-            />
-          </group>
-        );
-      })}
+      {/* Per-segment thin lines + midpoint lights */}
+      {segments.map((seg, i) => (
+        <group key={i}>
+          <Line
+            points={seg.curve}
+            color="#A78BFA"
+            lineWidth={1.5}
+            transparent
+            opacity={0.3}
+          />
+          <pointLight
+            position={[seg.mid.x, seg.mid.y, seg.mid.z]}
+            color="#9370DB"
+            intensity={0.5}
+            distance={3}
+          />
+        </group>
+      ))}
     </>
   );
 }

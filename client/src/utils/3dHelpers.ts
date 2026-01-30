@@ -100,6 +100,29 @@ export function transformMomentsTo3D(
 }
 
 /**
+ * Generate smooth spiral curve points between two normalizedAge values.
+ * Uses the same formula as calculateMomentPosition so the curve passes
+ * exactly through each moment's position.
+ */
+export function generateSpiralCurve(startT: number, endT: number, steps: number): THREE.Vector3[] {
+  const points: THREE.Vector3[] = [];
+  for (let i = 0; i <= steps; i++) {
+    const t = startT + (endT - startT) * (i / steps);
+
+    const angle = t * Math.PI * 2 * 6;
+    const radius = 1 + t * 30;
+    const waveOffset = Math.sin(t * Math.PI * 3) * 2;
+
+    points.push(new THREE.Vector3(
+      Math.cos(angle) * radius,
+      (t - 0.5) * 15,
+      Math.sin(angle) * radius + waveOffset
+    ));
+  }
+  return points;
+}
+
+/**
  * Calculate camera position to view all moments
  */
 export function calculateOptimalCameraPosition(

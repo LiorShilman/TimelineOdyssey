@@ -2,7 +2,7 @@ import { Suspense, useRef, useEffect } from 'react';
 import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 import { useFrame, useThree } from '@react-three/fiber';
 import type { Moment } from '../../types/api.types';
-import { transformMomentsTo3D } from '../../utils/3dHelpers';
+import { transformMomentsTo3D, generateSpiralCurve } from '../../utils/3dHelpers';
 import Galaxy from './Galaxy';
 import * as THREE from 'three';
 
@@ -64,7 +64,11 @@ export default function Scene({ moments, onMomentClick, selectedMoment }: SceneP
 }
 
 /**
- * Camera controller that smoothly moves camera to selected moment
+ * Camera controller that follows the spiral path between moments.
+ * When navigating between two known moments the camera travels along
+ * the galaxy arm (radially-offset spiral points fed into a CatmullRom curve).
+ * On the very first click (no previous moment) it falls back to a simple
+ * arc that is pushed outward so it never cuts through the center.
  */
 function CameraController({
   moments,
@@ -76,67 +80,146 @@ function CameraController({
   controlsRef: React.RefObject<any>;
 }) {
   const { camera } = useThree();
-  const targetPosition = useRef(new THREE.Vector3());
-  const targetLookAt = useRef(new THREE.Vector3());
   const isAnimating = useRef(false);
   const animationProgress = useRef(0);
-  const initialCameraPos = useRef(new THREE.Vector3());
-  const initialTarget = useRef(new THREE.Vector3());
+  const animSpeed = useRef(0.8);
+  const cameraCurve = useRef<THREE.CatmullRomCurve3 | null>(null);
+  const targetCurve = useRef<THREE.CatmullRomCurve3 | null>(null);
+  const prevMomentId = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!selectedMoment) return;
-
-    // Find the 3D position of the selected moment
-    const moments3D = transformMomentsTo3D(moments);
-    const selectedMoment3D = moments3D.find(m => m.id === selectedMoment.id);
-
-    if (!selectedMoment3D) return;
-
-    const momentPos = selectedMoment3D.position;
-
-    // Store initial positions
-    initialCameraPos.current.copy(camera.position);
-    if (controlsRef.current) {
-      initialTarget.current.copy(controlsRef.current.target);
+    if (!selectedMoment) {
+      prevMomentId.current = null;
+      return;
     }
 
-    // Calculate camera position - offset from the moment for better view
-    const distance = 8; // Distance from moment
-    const angle = Math.atan2(momentPos.z, momentPos.x);
-
-    const offset = new THREE.Vector3(
-      Math.cos(angle) * distance,
-      distance * 0.6,
-      Math.sin(angle) * distance
+    // Sort chronologically to derive each moment's normalizedAge (0–1)
+    const sorted = [...moments].sort(
+      (a, b) => new Date(a.momentDate).getTime() - new Date(b.momentDate).getTime()
     );
+    const total = sorted.length;
+    const currentIdx = sorted.findIndex(m => m.id === selectedMoment.id);
+    if (currentIdx === -1) return;
+    const currentT = total > 1 ? currentIdx / (total - 1) : 0.5;
 
-    targetPosition.current.copy(momentPos).add(offset);
-    targetLookAt.current.copy(momentPos);
+    // 3D position of the target moment
+    const moments3D = transformMomentsTo3D(moments);
+    const selectedMoment3D = moments3D.find(m => m.id === selectedMoment.id);
+    if (!selectedMoment3D) return;
+    const momentPos = selectedMoment3D.position;
 
-    // Start animation
+    // End camera position: offset radially outward from the moment
+    const camDistance = 8;
+    const endAngle = Math.atan2(momentPos.z, momentPos.x);
+    const endCamPos = momentPos.clone().add(new THREE.Vector3(
+      Math.cos(endAngle) * camDistance,
+      camDistance * 0.6,
+      Math.sin(endAngle) * camDistance
+    ));
+    const endTarget = momentPos.clone();
+
+    // Snapshot current camera state
+    const startCamPos = camera.position.clone();
+    const startTarget = controlsRef.current
+      ? controlsRef.current.target.clone()
+      : new THREE.Vector3();
+
+    // Previous moment's normalizedAge (null on first click)
+    let prevT: number | null = null;
+    if (prevMomentId.current) {
+      const prevIdx = sorted.findIndex(m => m.id === prevMomentId.current);
+      if (prevIdx !== -1) {
+        prevT = total > 1 ? prevIdx / (total - 1) : 0.5;
+      }
+    }
+
+    let camPoints: THREE.Vector3[];
+    let targetPoints: THREE.Vector3[];
+
+    if (prevT !== null && prevT !== currentT) {
+      // ── Follow the spiral between previous and current moment ──
+      const tMin = Math.min(prevT, currentT);
+      const tMax = Math.max(prevT, currentT);
+      const spiralPoints = generateSpiralCurve(tMin, tMax, 20);
+      if (prevT > currentT) spiralPoints.reverse();
+
+      // Camera path: each spiral point offset radially outward
+      camPoints = spiralPoints.map(p => {
+        const a = Math.atan2(p.z, p.x);
+        return new THREE.Vector3(
+          p.x + Math.cos(a) * camDistance,
+          p.y + camDistance * 0.6,
+          p.z + Math.sin(a) * camDistance
+        );
+      });
+      // Snap first / last to actual positions for a seamless join
+      camPoints[0] = startCamPos;
+      camPoints[camPoints.length - 1] = endCamPos;
+
+      // LookAt path: follow the spiral itself
+      targetPoints = spiralPoints.map(p => p.clone());
+      targetPoints[0] = startTarget;
+      targetPoints[targetPoints.length - 1] = endTarget;
+    } else {
+      // ── First click — simple arc, pushed outward from center ──
+      const midCam = new THREE.Vector3()
+        .addVectors(startCamPos, endCamPos)
+        .multiplyScalar(0.5);
+
+      const midXZDist = Math.sqrt(midCam.x ** 2 + midCam.z ** 2);
+      const avgXZDist = (
+        Math.sqrt(startCamPos.x ** 2 + startCamPos.z ** 2) +
+        Math.sqrt(endCamPos.x ** 2 + endCamPos.z ** 2)
+      ) / 2;
+
+      // If midpoint is too close to center, push it outward
+      if (midXZDist < avgXZDist * 0.5) {
+        const pushDir = midXZDist > 0.1
+          ? new THREE.Vector3(midCam.x, 0, midCam.z).normalize()
+          : new THREE.Vector3(startCamPos.x, 0, startCamPos.z).normalize();
+        midCam.x = pushDir.x * avgXZDist * 0.7;
+        midCam.z = pushDir.z * avgXZDist * 0.7;
+      }
+      midCam.y += 3;
+
+      camPoints = [startCamPos, midCam, endCamPos];
+
+      const midTarget = new THREE.Vector3()
+        .addVectors(startTarget, endTarget)
+        .multiplyScalar(0.5);
+      targetPoints = [startTarget, midTarget, endTarget];
+    }
+
+    cameraCurve.current = new THREE.CatmullRomCurve3(camPoints);
+    targetCurve.current = new THREE.CatmullRomCurve3(targetPoints);
+
+    // Scale speed so longer paths take proportionally more time,
+    // but stay within a comfortable range
+    const pathLen = cameraCurve.current.getLength();
+    animSpeed.current = Math.max(0.5, Math.min(1.2, 25 / pathLen));
+
     isAnimating.current = true;
     animationProgress.current = 0;
+    prevMomentId.current = selectedMoment.id;
   }, [selectedMoment, moments, camera, controlsRef]);
 
-  useFrame((state, delta) => {
-    if (!isAnimating.current || !controlsRef.current) return;
+  useFrame((_state, delta) => {
+    if (!isAnimating.current || !cameraCurve.current || !targetCurve.current || !controlsRef.current) return;
 
-    // Smooth animation using easing
-    animationProgress.current += delta * 1.5; // Animation speed
-
+    animationProgress.current += delta * animSpeed.current;
     if (animationProgress.current >= 1) {
       animationProgress.current = 1;
       isAnimating.current = false;
     }
 
-    // Easing function (ease out cubic)
-    const t = 1 - Math.pow(1 - animationProgress.current, 3);
+    // Ease-in-out cubic: slow departure → accelerate → slow arrival
+    const raw = animationProgress.current;
+    const t = raw < 0.5
+      ? 4 * raw * raw * raw
+      : 1 - Math.pow(-2 * raw + 2, 3) / 2;
 
-    // Animate camera position
-    camera.position.lerpVectors(initialCameraPos.current, targetPosition.current, t);
-
-    // Animate controls target (what the camera looks at)
-    controlsRef.current.target.lerpVectors(initialTarget.current, targetLookAt.current, t);
+    camera.position.copy(cameraCurve.current.getPoint(t));
+    controlsRef.current.target.copy(targetCurve.current.getPoint(t));
     controlsRef.current.update();
   });
 
