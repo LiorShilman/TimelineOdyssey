@@ -31,7 +31,12 @@ export async function uploadMediaController(
       media: uploadedMedia,
     });
   } catch (error: any) {
-    next(error);
+    console.error('Upload error:', error);
+    res.status(500).json({
+      error: 'Failed to upload media',
+      message: error.message,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+    });
   }
 }
 
