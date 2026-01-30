@@ -14,6 +14,7 @@ import './config/database.config.js';
 import authRoutes from './routes/auth.routes.js';
 import userRoutes from './routes/user.routes.js';
 import momentRoutes from './routes/moment.routes.js';
+import mediaRoutes from './routes/media.routes.js';
 
 // Import middleware
 import { generalLimiter } from './middleware/rateLimit.middleware.js';
@@ -60,9 +61,9 @@ app.get('/api/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/moments', momentRoutes);
+app.use('/api/media', mediaRoutes);
 
 // Future routes will be added here:
-// app.use('/api/media', mediaRoutes);
 // app.use('/api/tags', tagRoutes);
 // app.use('/api/timeline', timelineRoutes);
 

@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useMomentStore } from '../../stores/momentStoreNew';
-import type { Moment } from '../../types/api.types';
+import type { Moment, MediaFile } from '../../types/api.types';
+import MediaUploader from './MediaUploader';
+import MediaGallery from './MediaGallery';
+import { mediaService } from '../../services/mediaService';
+import { toast } from 'sonner';
 
 interface EditMomentModalProps {
   moment: Moment;
@@ -16,6 +20,7 @@ export default function EditMomentModal({ moment, onClose }: EditMomentModalProp
     emotion: moment.emotion || 'neutral',
     importance: moment.importance || 3,
   });
+  const [media, setMedia] = useState<MediaFile[]>(moment.mediaFiles || []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,6 +32,22 @@ export default function EditMomentModal({ moment, onClose }: EditMomentModalProp
       onClose();
     } catch (error) {
       // Error handled by store
+    }
+  };
+
+  const handleMediaUploadComplete = (newMedia: MediaFile[]) => {
+    setMedia((prev) => [...prev, ...newMedia]);
+  };
+
+  const handleDeleteMedia = async (mediaId: string) => {
+    if (!confirm('בטוח שברצונך למחוק את הקובץ?')) return;
+
+    try {
+      await mediaService.deleteMedia(mediaId);
+      setMedia((prev) => prev.filter((m) => m.id !== mediaId));
+      toast.success('הקובץ נמחק בהצלחה');
+    } catch (error: any) {
+      toast.error('שגיאה במחיקת הקובץ');
     }
   };
 
@@ -113,6 +134,24 @@ export default function EditMomentModal({ moment, onClose }: EditMomentModalProp
                 />
               </div>
             </div>
+
+            {/* Media Gallery */}
+            {media.length > 0 && (
+              <div>
+                <label className="block text-sm font-medium mb-2">מדיה ({media.length})</label>
+                <MediaGallery
+                  media={media}
+                  onDelete={handleDeleteMedia}
+                  editable
+                />
+              </div>
+            )}
+
+            {/* Media Uploader */}
+            <MediaUploader
+              momentId={moment.id}
+              onUploadComplete={handleMediaUploadComplete}
+            />
 
             {/* Actions */}
             <div className="flex justify-end gap-3 pt-4 border-t border-gray-700">

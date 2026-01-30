@@ -1,0 +1,77 @@
+import { Request, Response, NextFunction } from 'express';
+import * as mediaService from '../services/media.service';
+
+/**
+ * Upload media files to a moment
+ * POST /api/media/upload/:momentId
+ */
+export async function uploadMediaController(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const { momentId } = req.params;
+    const userId = req.user!.userId;
+    const files = req.files as Express.Multer.File[];
+
+    if (!files || files.length === 0) {
+      return res.status(400).json({ error: 'No files provided' });
+    }
+
+    // Upload all files
+    const uploadedMedia = await Promise.all(
+      files.map((file, index) =>
+        mediaService.uploadMomentMedia(userId, momentId, file, index)
+      )
+    );
+
+    res.status(201).json({
+      message: 'Files uploaded successfully',
+      media: uploadedMedia,
+    });
+  } catch (error: any) {
+    next(error);
+  }
+}
+
+/**
+ * Get media files for a moment
+ * GET /api/media/:momentId
+ */
+export async function getMomentMediaController(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const { momentId } = req.params;
+
+    const media = await mediaService.getMomentMedia(momentId);
+
+    res.json(media);
+  } catch (error: any) {
+    next(error);
+  }
+}
+
+/**
+ * Delete a media file
+ * DELETE /api/media/:mediaId
+ */
+export async function deleteMediaController(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const { mediaId } = req.params;
+    const userId = req.user!.userId;
+
+    await mediaService.deleteMediaFile(mediaId, userId);
+
+    res.json({ message: 'Media file deleted successfully' });
+  } catch (error: any) {
+    next(error);
+  }
+}

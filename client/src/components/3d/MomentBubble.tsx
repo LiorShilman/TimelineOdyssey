@@ -1,5 +1,5 @@
-import { useRef, useState } from 'react';
-import { useFrame } from '@react-three/fiber';
+import { useRef, useState, useMemo } from 'react';
+import { useFrame, useLoader } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
 import * as THREE from 'three';
 import type { Moment } from '../../types/api.types';
@@ -22,6 +22,15 @@ export default function MomentBubble({
   const meshRef = useRef<THREE.Mesh>(null);
   const [hovered, setHovered] = useState(false);
   const [clicked, setClicked] = useState(false);
+
+  // Get first image from moment's media
+  const firstImage = useMemo(() => {
+    const imageFile = moment.mediaFiles?.find((m) => m.fileType === 'image');
+    return imageFile?.thumbnailUrl || imageFile?.url;
+  }, [moment.mediaFiles]);
+
+  // Load texture if image exists
+  const texture = firstImage ? useLoader(THREE.TextureLoader, firstImage) : null;
 
   // Gentle floating animation
   useFrame((state) => {
@@ -67,15 +76,27 @@ export default function MomentBubble({
         }}
       >
         <sphereGeometry args={[size, 32, 32]} />
-        <meshStandardMaterial
-          color={color}
-          emissive={color}
-          emissiveIntensity={hovered ? 0.5 : 0.2}
-          metalness={0.3}
-          roughness={0.4}
-          transparent
-          opacity={0.9}
-        />
+        {texture ? (
+          <meshStandardMaterial
+            map={texture}
+            emissive={color}
+            emissiveIntensity={hovered ? 0.3 : 0.1}
+            metalness={0.2}
+            roughness={0.3}
+            transparent
+            opacity={0.95}
+          />
+        ) : (
+          <meshStandardMaterial
+            color={color}
+            emissive={color}
+            emissiveIntensity={hovered ? 0.5 : 0.2}
+            metalness={0.3}
+            roughness={0.4}
+            transparent
+            opacity={0.9}
+          />
+        )}
       </mesh>
 
       {/* Tooltip on hover */}

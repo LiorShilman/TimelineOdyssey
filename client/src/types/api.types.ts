@@ -47,16 +47,15 @@ export interface Moment {
 export interface MediaFile {
   id: string;
   momentId: string;
-  fileType: string;
-  originalFilename: string;
-  storageKey: string;
-  thumbnailKey: string | null;
-  mediumKey: string | null;
-  fileSize: number;
+  fileName: string;
+  fileType: 'image' | 'video' | 'other';
   mimeType: string;
+  fileSize: number;
+  storageKey: string;
+  url: string;
+  thumbnailUrl: string | null;
   width: number | null;
   height: number | null;
-  duration: number | null;
   metadata: any;
   orderIndex: number;
   createdAt: string;
@@ -78,14 +77,8 @@ export interface MomentTag {
 
 export interface MomentStats {
   total: number;
-  byEmotion: Array<{
-    emotion: string | null;
-    _count: number;
-  }>;
-  byImportance: Array<{
-    importance: number | null;
-    _count: number;
-  }>;
+  byEmotion: Record<string, number>;
+  byImportance: Record<number, number>;
 }
 
 // Request types
