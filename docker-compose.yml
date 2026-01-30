@@ -1,0 +1,103 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: timeline-odyssey-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: timeline_user
+      POSTGRES_PASSWORD: timeline_password
+      POSTGRES_DB: timeline_odyssey
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - timeline-network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: timeline-odyssey-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - timeline-network
+
+  # MinIO (S3-compatible storage)
+  minio:
+    image: minio/minio:latest
+    container_name: timeline-odyssey-minio
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin123
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    networks:
+      - timeline-network
+
+  # Server (Express API)
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: timeline-odyssey-server
+    restart: unless-stopped
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://timeline_user:timeline_password@postgres:5432/timeline_odyssey
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: your-super-secret-jwt-key-change-in-production
+      AWS_ACCESS_KEY_ID: minioadmin
+      AWS_SECRET_ACCESS_KEY: minioadmin123
+      AWS_ENDPOINT: http://minio:9000
+      AWS_BUCKET_NAME: timeline-odyssey
+    ports:
+      - "3001:3001"
+    depends_on:
+      - postgres
+      - redis
+      - minio
+    volumes:
+      - ./server:/app
+      - /app/node_modules
+    networks:
+      - timeline-network
+
+  # Client (React + Vite)
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: timeline-odyssey-client
+    restart: unless-stopped
+    environment:
+      VITE_API_URL: http://localhost:3001/api
+    ports:
+      - "5173:5173"
+    depends_on:
+      - server
+    volumes:
+      - ./client:/app
+      - /app/node_modules
+    networks:
+      - timeline-network
+
+networks:
+  timeline-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+  minio_data:
