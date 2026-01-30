@@ -1,4 +1,4 @@
-import { apiClient } from './api';
+import { api } from './api';
 import type { MediaFile } from '../types/api.types';
 
 /**
@@ -14,7 +14,7 @@ export async function uploadMedia(
     formData.append('files', file);
   });
 
-  const response = await apiClient.post<{ media: MediaFile[] }>(
+  const response = await api.post<{ media: MediaFile[] }>(
     `/media/upload/${momentId}`,
     formData,
     {
@@ -31,7 +31,7 @@ export async function uploadMedia(
  * Get media files for a moment
  */
 export async function getMomentMedia(momentId: string): Promise<MediaFile[]> {
-  const response = await apiClient.get<MediaFile[]>(`/media/${momentId}`);
+  const response = await api.get<MediaFile[]>(`/media/${momentId}`);
   return response.data;
 }
 
@@ -39,7 +39,7 @@ export async function getMomentMedia(momentId: string): Promise<MediaFile[]> {
  * Delete a media file
  */
 export async function deleteMedia(mediaId: string): Promise<void> {
-  await apiClient.delete(`/media/${mediaId}`);
+  await api.delete(`/media/${mediaId}`);
 }
 
 export const mediaService = {
