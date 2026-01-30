@@ -3,6 +3,7 @@ import { Toaster } from 'sonner';
 import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
 import MomentsPage from './pages/MomentsPage';
+import GalaxyPage from './pages/GalaxyPage';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import { useAuthStore } from './stores/authStore';
 
@@ -16,7 +17,7 @@ function App() {
           {/* Redirect root based on auth status */}
           <Route
             path="/"
-            element={isAuthenticated ? <Navigate to="/moments" replace /> : <Navigate to="/login" replace />}
+            element={isAuthenticated ? <Navigate to="/galaxy" replace /> : <Navigate to="/login" replace />}
           />
 
           {/* Public routes */}
@@ -24,6 +25,14 @@ function App() {
           <Route path="/register" element={<RegisterPage />} />
 
           {/* Protected routes */}
+          <Route
+            path="/galaxy"
+            element={
+              <ProtectedRoute>
+                <GalaxyPage />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/moments"
             element={

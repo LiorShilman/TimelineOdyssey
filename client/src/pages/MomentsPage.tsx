@@ -90,6 +90,12 @@ export default function MomentsPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
           <h1 className="text-2xl font-bold">🌌 Timeline Odyssey</h1>
           <div className="flex items-center gap-4">
+            <button
+              onClick={() => navigate('/galaxy')}
+              className="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors text-sm"
+            >
+              🌠 תצוגת גלקסיה
+            </button>
             <span className="text-gray-300">שלום, {user?.firstName || user?.email}</span>
             <button
               onClick={handleLogout}
