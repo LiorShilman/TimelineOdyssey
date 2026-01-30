@@ -3,6 +3,7 @@ import { useMomentStore } from '../../stores/momentStoreNew';
 import type { Moment, MediaFile } from '../../types/api.types';
 import MediaUploader from './MediaUploader';
 import MediaGallery from './MediaGallery';
+import TagManager from './TagManager';
 import { mediaService } from '../../services/mediaService';
 import { toast } from 'sonner';
 
@@ -133,9 +134,22 @@ export default function EditMomentModal({ moment, onClose }: EditMomentModalProp
                   onChange={(e) =>
                     setFormData({ ...formData, importance: parseInt(e.target.value) })
                   }
-                  className="w-full"
+                  className="w-full py-2"
                 />
               </div>
+            </div>
+
+            {/* Tags */}
+            <div>
+              <label className="block text-sm font-medium mb-2">תגיות</label>
+              <TagManager
+                momentId={moment.id}
+                existingTags={moment.tags || []}
+                onTagsChange={() => {
+                  const { fetchMoments } = useMomentStore.getState();
+                  fetchMoments();
+                }}
+              />
             </div>
 
             {/* Media Gallery */}

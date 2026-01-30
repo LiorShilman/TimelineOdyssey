@@ -1,10 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import { useMomentStore } from '../stores/momentStoreNew';
 import type { Moment } from '../types/api.types';
 import Scene from '../components/3d/Scene';
+import MediaGallery from '../components/moments/MediaGallery';
+import TimelineSlider from '../components/moments/TimelineSlider';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 
@@ -14,10 +16,32 @@ export default function GalaxyPage() {
   const { moments, isLoading, fetchMoments } = useMomentStore();
   const [selectedMoment, setSelectedMoment] = useState<Moment | null>(null);
   const [showControls, setShowControls] = useState(true);
+  const [filterStart, setFilterStart] = useState<Date | null>(null);
+  const [filterEnd, setFilterEnd] = useState<Date | null>(null);
 
   useEffect(() => {
     fetchMoments();
   }, []);
+
+  // Filter moments by date range
+  const visibleMoments = useMemo(() => {
+    if (!filterStart || !filterEnd) return moments;
+
+    return moments.filter(m => {
+      const date = new Date(m.momentDate);
+      return date >= filterStart && date <= filterEnd;
+    });
+  }, [moments, filterStart, filterEnd]);
+
+  const handleFilterChange = useCallback((start: Date | null, end: Date | null) => {
+    setFilterStart(start);
+    setFilterEnd(end);
+  }, []);
+
+  // Sort visible moments chronologically for navigation
+  const sortedMoments = [...visibleMoments].sort(
+    (a, b) => new Date(a.momentDate).getTime() - new Date(b.momentDate).getTime()
+  );
 
   const handleLogout = async () => {
     await logout();
@@ -31,6 +55,56 @@ export default function GalaxyPage() {
   const handleCloseDetails = () => {
     setSelectedMoment(null);
   };
+
+  // Navigate to next moment in timeline
+  const handleNextMoment = () => {
+    if (!selectedMoment) {
+      // If no moment selected, select the first one
+      if (sortedMoments.length > 0) {
+        setSelectedMoment(sortedMoments[0]);
+      }
+      return;
+    }
+
+    const currentIndex = sortedMoments.findIndex(m => m.id === selectedMoment.id);
+    if (currentIndex !== -1 && currentIndex < sortedMoments.length - 1) {
+      setSelectedMoment(sortedMoments[currentIndex + 1]);
+    }
+  };
+
+  // Navigate to previous moment in timeline
+  const handlePreviousMoment = () => {
+    if (!selectedMoment) {
+      // If no moment selected, select the last one
+      if (sortedMoments.length > 0) {
+        setSelectedMoment(sortedMoments[sortedMoments.length - 1]);
+      }
+      return;
+    }
+
+    const currentIndex = sortedMoments.findIndex(m => m.id === selectedMoment.id);
+    if (currentIndex > 0) {
+      setSelectedMoment(sortedMoments[currentIndex - 1]);
+    }
+  };
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        handlePreviousMoment(); // Right arrow = go back in time (RTL)
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        handleNextMoment(); // Left arrow = go forward in time (RTL)
+      } else if (e.key === 'Escape') {
+        handleCloseDetails();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedMoment, sortedMoments]);
 
   return (
     <div className="h-screen w-screen bg-gray-900 overflow-hidden">
@@ -89,10 +163,71 @@ export default function GalaxyPage() {
           >
             <color attach="background" args={['#0a0a1e']} />
             <fog attach="fog" args={['#0a0a1e', 30, 80]} />
-            <Scene moments={moments} onMomentClick={handleMomentClick} />
+            <Scene
+              moments={visibleMoments}
+              onMomentClick={handleMomentClick}
+              selectedMoment={selectedMoment}
+            />
           </Canvas>
         )}
       </div>
+
+      {/* Timeline Slider - hidden when moment is selected */}
+      {!selectedMoment && (
+        <TimelineSlider
+          moments={moments}
+          visibleMoments={visibleMoments}
+          onFilterChange={handleFilterChange}
+        />
+      )}
+
+      {/* Time Navigation Controls */}
+      {moments.length > 0 && selectedMoment && (
+        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-50">
+          <div className="flex items-center gap-4 bg-gray-900 bg-opacity-95 border border-gray-700 rounded-full px-6 py-3 shadow-2xl">
+            {/* Previous Button */}
+            <button
+              onClick={handlePreviousMoment}
+              disabled={sortedMoments.findIndex(m => m.id === selectedMoment.id) === 0}
+              className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-700 disabled:cursor-not-allowed rounded-full transition-colors text-white font-medium"
+              title="רגע קודם (→)"
+            >
+              <span className="text-xl">→</span>
+              <span>אחורה בזמן</span>
+            </button>
+
+            {/* Current position indicator */}
+            <div className="px-4 py-2 bg-gray-800 rounded-full">
+              <span className="text-purple-400 font-bold">
+                {sortedMoments.findIndex(m => m.id === selectedMoment.id) + 1}
+              </span>
+              <span className="text-gray-400 mx-1">/</span>
+              <span className="text-gray-400">{sortedMoments.length}</span>
+            </div>
+
+            {/* Reset Button */}
+            <button
+              onClick={handleCloseDetails}
+              className="flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-full transition-colors text-white font-medium"
+              title="חזור לתצוגה כללית (ESC)"
+            >
+              <span>🌌</span>
+              <span>תצוגה כללית</span>
+            </button>
+
+            {/* Next Button */}
+            <button
+              onClick={handleNextMoment}
+              disabled={sortedMoments.findIndex(m => m.id === selectedMoment.id) === sortedMoments.length - 1}
+              className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-700 disabled:cursor-not-allowed rounded-full transition-colors text-white font-medium"
+              title="רגע הבא (←)"
+            >
+              <span>קדימה בזמן</span>
+              <span className="text-xl">←</span>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Controls hint */}
       {showControls && moments.length > 0 && (
@@ -111,6 +246,8 @@ export default function GalaxyPage() {
             <li>🔍 גלגלת: זום פנימה/החוצה</li>
             <li>👆 לחיצה על בועה: פרטי רגע</li>
             <li>⌨️ Shift + גרירה: הזזת מצלמה</li>
+            <li>⬅️ ➡️ חצים: ניווט בזמן</li>
+            <li>⎋ ESC: סגור פרטים</li>
           </ul>
         </div>
       )}
@@ -147,7 +284,7 @@ export default function GalaxyPage() {
 
       {/* Moment Details Panel */}
       {selectedMoment && (
-        <div className="absolute top-0 left-0 bottom-0 w-96 bg-gray-900 bg-opacity-95 border-r border-gray-700 p-6 overflow-y-auto z-20">
+        <div className="absolute top-0 left-0 bottom-0 w-96 bg-gray-900 bg-opacity-95 border-r border-gray-700 p-6 overflow-y-auto z-20 transition-all duration-300">
           <div className="flex justify-between items-start mb-4">
             <h2 className="text-2xl font-bold text-white">פרטי רגע</h2>
             <button
@@ -158,13 +295,38 @@ export default function GalaxyPage() {
             </button>
           </div>
 
+          {/* Navigation within panel */}
+          <div className="flex gap-2 mb-4">
+            <button
+              onClick={handlePreviousMoment}
+              disabled={sortedMoments.findIndex(m => m.id === selectedMoment.id) === 0}
+              className="flex-1 px-3 py-2 bg-gray-800 hover:bg-gray-700 disabled:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors text-white text-sm flex items-center justify-center gap-2"
+            >
+              <span>→</span>
+              <span>קודם</span>
+            </button>
+            <div className="px-4 py-2 bg-purple-900 bg-opacity-50 rounded-lg flex items-center justify-center">
+              <span className="text-purple-400 font-bold text-sm">
+                {sortedMoments.findIndex(m => m.id === selectedMoment.id) + 1} / {sortedMoments.length}
+              </span>
+            </div>
+            <button
+              onClick={handleNextMoment}
+              disabled={sortedMoments.findIndex(m => m.id === selectedMoment.id) === sortedMoments.length - 1}
+              className="flex-1 px-3 py-2 bg-gray-800 hover:bg-gray-700 disabled:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors text-white text-sm flex items-center justify-center gap-2"
+            >
+              <span>הבא</span>
+              <span>←</span>
+            </button>
+          </div>
+
           <div className="space-y-4">
             <div>
               <h3 className="text-xl font-semibold text-white mb-2">
                 {selectedMoment.title}
               </h3>
               <p className="text-gray-400 text-sm">
-                {format(new Date(selectedMoment.momentDate), 'PPP', { locale: he })}
+                📅 {format(new Date(selectedMoment.momentDate), 'PPP', { locale: he })}
               </p>
             </div>
 
@@ -188,6 +350,34 @@ export default function GalaxyPage() {
               </div>
             </div>
 
+            {/* Tags */}
+            {selectedMoment.tags && selectedMoment.tags.length > 0 && (
+              <div>
+                <h4 className="text-sm font-medium text-gray-300 mb-2">תגיות</h4>
+                <div className="flex flex-wrap gap-2">
+                  {selectedMoment.tags.map(mt => (
+                    <span
+                      key={mt.tagId}
+                      className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium text-white"
+                      style={{ backgroundColor: mt.tag.color || '#9370DB' }}
+                    >
+                      🏷️ {mt.tag.name}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Media Gallery */}
+            {selectedMoment.mediaFiles && selectedMoment.mediaFiles.length > 0 && (
+              <div>
+                <h4 className="text-sm font-medium text-gray-300 mb-2">
+                  קבצים מצורפים ({selectedMoment.mediaFiles.length})
+                </h4>
+                <MediaGallery media={selectedMoment.mediaFiles} editable={false} />
+              </div>
+            )}
+
             <div className="pt-4">
               <button
                 onClick={() => navigate('/moments')}
@@ -200,12 +390,30 @@ export default function GalaxyPage() {
         </div>
       )}
 
-      {/* Stats counter */}
-      <div className="absolute top-20 right-4 bg-gray-900 bg-opacity-90 border border-gray-700 rounded-lg px-4 py-2">
-        <div className="text-center">
-          <div className="text-2xl font-bold text-purple-400">{moments.length}</div>
-          <div className="text-xs text-gray-400">רגעים</div>
+      {/* Stats counter and Reset button */}
+      <div className="absolute top-20 right-4 space-y-3">
+        <div className="bg-gray-900 bg-opacity-90 border border-gray-700 rounded-lg px-4 py-2">
+          <div className="text-center">
+            <div className="text-2xl font-bold text-purple-400">{moments.length}</div>
+            <div className="text-xs text-gray-400">רגעים</div>
+          </div>
         </div>
+
+        {/* Reset View Button */}
+        {selectedMoment && (
+          <button
+            onClick={handleCloseDetails}
+            className="w-full bg-gray-900 bg-opacity-90 border border-gray-700 hover:border-purple-500 rounded-lg px-4 py-2 transition-colors group"
+            title="חזור לתצוגה כללית (ESC)"
+          >
+            <div className="text-center">
+              <div className="text-2xl group-hover:scale-110 transition-transform">🌌</div>
+              <div className="text-xs text-gray-400 group-hover:text-purple-400 transition-colors">
+                תצוגה כללית
+              </div>
+            </div>
+          </button>
+        )}
       </div>
     </div>
   );

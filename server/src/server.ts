@@ -15,6 +15,7 @@ import authRoutes from './routes/auth.routes.js';
 import userRoutes from './routes/user.routes.js';
 import momentRoutes from './routes/moment.routes.js';
 import mediaRoutes from './routes/media.routes.js';
+import tagRoutes from './routes/tag.routes.js';
 
 // Import middleware
 import { generalLimiter } from './middleware/rateLimit.middleware.js';
@@ -62,9 +63,9 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/moments', momentRoutes);
 app.use('/api/media', mediaRoutes);
+app.use('/api/tags', tagRoutes);
 
 // Future routes will be added here:
-// app.use('/api/tags', tagRoutes);
 // app.use('/api/timeline', timelineRoutes);
 
 // 404 handler

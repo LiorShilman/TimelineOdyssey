@@ -42,11 +42,11 @@ export function calculateMomentPosition(
   // Normalize position (0 to 1) based on timeline
   const normalizedAge = totalMoments > 1 ? momentIndex / (totalMoments - 1) : 0.5;
 
-  // Logarithmic spiral parameters
-  const spiralTightness = 0.5; // How tight the spiral is
-  const spiralRotations = 4; // Number of full rotations
-  const maxRadius = 20; // Maximum distance from center
-  const verticalSpread = 8; // Height variation
+  // Logarithmic spiral parameters - MORE DRAMATIC
+  const spiralTightness = 1; // How tight the spiral is
+  const spiralRotations = 6; // Number of full rotations (more dramatic)
+  const maxRadius = 30; // Maximum distance from center (wider)
+  const verticalSpread = 15; // Height variation (more vertical drama)
 
   // Calculate angle (increases as we go further)
   const angle = normalizedAge * Math.PI * 2 * spiralRotations;
@@ -54,9 +54,14 @@ export function calculateMomentPosition(
   // Calculate radius (logarithmic growth)
   const radius = spiralTightness + normalizedAge * maxRadius;
 
-  // Calculate position
+  // Add wave effect to make it more organic
+  const waveAmplitude = 2;
+  const waveFrequency = 3;
+  const waveOffset = Math.sin(normalizedAge * Math.PI * waveFrequency) * waveAmplitude;
+
+  // Calculate position with wave
   const x = Math.cos(angle) * radius;
-  const z = Math.sin(angle) * radius;
+  const z = Math.sin(angle) * radius + waveOffset;
   const y = (normalizedAge - 0.5) * verticalSpread;
 
   return new THREE.Vector3(x, y, z);

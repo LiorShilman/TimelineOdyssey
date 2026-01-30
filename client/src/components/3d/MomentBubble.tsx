@@ -10,6 +10,7 @@ interface MomentBubbleProps {
   color: string;
   size: number;
   onClick: (moment: Moment) => void;
+  isSelected?: boolean;
 }
 
 export default function MomentBubble({
@@ -17,7 +18,8 @@ export default function MomentBubble({
   position,
   color,
   size,
-  onClick
+  onClick,
+  isSelected = false
 }: MomentBubbleProps) {
   const meshRef = useRef<THREE.Mesh>(null);
   const [hovered, setHovered] = useState(false);
@@ -32,6 +34,8 @@ export default function MomentBubble({
   // Load texture if image exists
   const texture = firstImage ? useLoader(THREE.TextureLoader, firstImage) : null;
 
+  const ringRef = useRef<THREE.Mesh>(null);
+
   // Gentle floating animation
   useFrame((state) => {
     if (meshRef.current) {
@@ -43,12 +47,19 @@ export default function MomentBubble({
       // Slow rotation
       meshRef.current.rotation.y += 0.003;
 
-      // Scale on hover
-      const targetScale = hovered ? 1.3 : 1;
+      // Scale: only slight bump on hover, no change on selected (camera zooms instead)
+      const targetScale = hovered && !isSelected ? 1.2 : 1;
       meshRef.current.scale.lerp(
         new THREE.Vector3(targetScale, targetScale, targetScale),
         0.1
       );
+    }
+
+    // Animate selection ring pulse
+    if (ringRef.current && isSelected) {
+      const time = state.clock.getElapsedTime();
+      const pulse = 1 + Math.sin(time * 2) * 0.08;
+      ringRef.current.scale.set(pulse, pulse, pulse);
     }
   });
 
@@ -80,21 +91,21 @@ export default function MomentBubble({
           <meshStandardMaterial
             map={texture}
             emissive={color}
-            emissiveIntensity={hovered ? 0.3 : 0.1}
-            metalness={0.2}
-            roughness={0.3}
+            emissiveIntensity={hovered ? 0.1 : 0.03}
+            metalness={0.05}
+            roughness={0.15}
             transparent
-            opacity={0.95}
+            opacity={0.7}
           />
         ) : (
           <meshStandardMaterial
             color={color}
             emissive={color}
-            emissiveIntensity={hovered ? 0.5 : 0.2}
+            emissiveIntensity={isSelected ? 0.6 : (hovered ? 0.35 : 0.2)}
             metalness={0.3}
             roughness={0.4}
             transparent
-            opacity={0.9}
+            opacity={isSelected ? 0.8 : 0.65}
           />
         )}
       </mesh>
@@ -121,9 +132,36 @@ export default function MomentBubble({
       <pointLight
         position={[position.x, position.y, position.z]}
         color={color}
-        intensity={hovered ? 2 : 0.5}
-        distance={size * 3}
+        intensity={isSelected ? 2 : (hovered ? 1.5 : 0.4)}
+        distance={isSelected ? size * 5 : size * 3}
       />
+
+      {/* Selection rings - pulsing outer indicator */}
+      {isSelected && (
+        <group position={[position.x, position.y, position.z]}>
+          {/* Inner ring - solid */}
+          <mesh rotation={[Math.PI / 2, 0, 0]}>
+            <ringGeometry args={[size * 1.15, size * 1.25, 64]} />
+            <meshBasicMaterial
+              color="#ffffff"
+              transparent
+              opacity={0.6}
+              side={THREE.DoubleSide}
+            />
+          </mesh>
+
+          {/* Outer ring - pulsing, colored */}
+          <mesh ref={ringRef} rotation={[Math.PI / 2, 0, 0]}>
+            <ringGeometry args={[size * 1.35, size * 1.55, 64]} />
+            <meshBasicMaterial
+              color={color}
+              transparent
+              opacity={0.4}
+              side={THREE.DoubleSide}
+            />
+          </mesh>
+        </group>
+      )}
     </group>
   );
 }
