@@ -32,6 +32,15 @@ export default function GalaxyPage() {
     fetchMoments();
   }, []);
 
+  // Fetch moments and sync the local selectedMoment so the detail panel stays up to date
+  const refreshAndSync = async () => {
+    await fetchMoments();
+    if (selectedMoment) {
+      const fresh = useMomentStore.getState().moments.find(m => m.id === selectedMoment.id);
+      if (fresh) setSelectedMoment(fresh);
+    }
+  };
+
   // Filter moments by date range + search (drafts excluded from galaxy)
   const visibleMoments = useMemo(() => {
     let filtered = moments.filter(m => !m.isDraft);
@@ -494,7 +503,7 @@ export default function GalaxyPage() {
               type="button"
               onClick={async () => {
                 await updateMoment(selectedMoment.id, { flagged: !selectedMoment.flagged });
-                await fetchMoments();
+                await refreshAndSync();
               }}
               className={`w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${
                 selectedMoment.flagged
@@ -533,7 +542,7 @@ export default function GalaxyPage() {
                 momentId={selectedMoment.id}
                 existingRelations={selectedMoment.relations || []}
                 allMoments={moments}
-                onRelationsChange={fetchMoments}
+                onRelationsChange={refreshAndSync}
               />
             </div>
 
