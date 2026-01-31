@@ -589,7 +589,7 @@ export default function GalaxyPage() {
           moment={editingMoment}
           onClose={() => {
             setEditingMoment(null);
-            fetchMoments();
+            refreshAndSync();
           }}
         />
       )}
