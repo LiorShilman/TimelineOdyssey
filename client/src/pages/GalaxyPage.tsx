@@ -32,9 +32,9 @@ export default function GalaxyPage() {
     fetchMoments();
   }, []);
 
-  // Filter moments by date range + search
+  // Filter moments by date range + search (drafts excluded from galaxy)
   const visibleMoments = useMemo(() => {
-    let filtered = moments;
+    let filtered = moments.filter(m => !m.isDraft);
 
     if (filterStart && filterEnd) {
       filtered = filtered.filter(m => {
@@ -301,6 +301,7 @@ export default function GalaxyPage() {
             <fog attach="fog" args={['#0a0a1e', 30, 80]} />
             <Scene
               moments={visibleMoments}
+              allMoments={moments}
               onMomentClick={handleMomentClick}
               selectedMoment={selectedMoment}
               viewMode={viewMode}

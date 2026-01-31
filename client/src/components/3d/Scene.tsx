@@ -9,13 +9,14 @@ import * as THREE from 'three';
 
 interface SceneProps {
   moments: Moment[];
+  allMoments?: Moment[];
   onMomentClick: (moment: Moment) => void;
   selectedMoment: Moment | null;
   viewMode: 'galaxy' | 'relations';
   dimmedIds?: Set<string> | null;
 }
 
-export default function Scene({ moments, onMomentClick, selectedMoment, viewMode, dimmedIds }: SceneProps) {
+export default function Scene({ moments, allMoments, onMomentClick, selectedMoment, viewMode, dimmedIds }: SceneProps) {
   const controlsRef = useRef<any>(null);
 
   return (
@@ -66,7 +67,7 @@ export default function Scene({ moments, onMomentClick, selectedMoment, viewMode
         {viewMode === 'relations' && selectedMoment ? (
           <RelationConstellation
             selectedMoment={selectedMoment}
-            allMoments={moments}
+            allMoments={allMoments || moments}
             onMomentClick={onMomentClick}
           />
         ) : (

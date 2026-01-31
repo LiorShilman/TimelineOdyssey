@@ -22,6 +22,7 @@ export default function EditMomentModal({ moment, onClose }: EditMomentModalProp
     emotion: moment.emotion || 'neutral',
     importance: moment.importance || 3,
     flagged: moment.flagged || false,
+    isDraft: moment.isDraft || false,
   });
   const [media, setMedia] = useState<MediaFile[]>(moment.mediaFiles || []);
 
@@ -158,6 +159,22 @@ export default function EditMomentModal({ moment, onClose }: EditMomentModalProp
               <span className="text-lg">{formData.flagged ? '🏴' : '🚩'}</span>
               <span className={`text-sm font-medium ${formData.flagged ? 'text-yellow-400' : 'text-gray-300'}`}>
                 {formData.flagged ? 'רגע מוגדר' : 'הגדר רגע'}
+              </span>
+            </button>
+
+            {/* Draft toggle — hide from main galaxy, still visible as a relation */}
+            <button
+              type="button"
+              onClick={() => setFormData({ ...formData, isDraft: !formData.isDraft })}
+              className={`w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${
+                formData.isDraft
+                  ? 'bg-gray-900 bg-opacity-60 border border-gray-500 hover:bg-opacity-80'
+                  : 'bg-gray-700 border border-gray-600 hover:border-gray-500 hover:bg-gray-600'
+              }`}
+            >
+              <span className="text-lg">{formData.isDraft ? '👁️‍🗨️' : '👁️'}</span>
+              <span className={`text-sm font-medium ${formData.isDraft ? 'text-gray-400' : 'text-gray-300'}`}>
+                {formData.isDraft ? 'נסתר מהגלקסיה' : 'הסתיר מהגלקסיה'}
               </span>
             </button>
 
