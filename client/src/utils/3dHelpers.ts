@@ -24,8 +24,7 @@ export interface Moment3DPosition {
  */
 export function calculateMomentPosition(
   moment: Moment,
-  allMoments: Moment[],
-  userBirthDate?: Date
+  allMoments: Moment[]
 ): THREE.Vector3 {
   // Sort moments by date to get the timeline
   const sortedMoments = [...allMoments].sort(
@@ -87,12 +86,11 @@ export function getMomentSize(moment: Moment): number {
  * Transform all moments into 3D positioned objects
  */
 export function transformMomentsTo3D(
-  moments: Moment[],
-  userBirthDate?: Date
+  moments: Moment[]
 ): Moment3DPosition[] {
   return moments.map((moment) => ({
     id: moment.id,
-    position: calculateMomentPosition(moment, moments, userBirthDate),
+    position: calculateMomentPosition(moment, moments),
     color: getMomentColor(moment),
     size: getMomentSize(moment),
     moment,

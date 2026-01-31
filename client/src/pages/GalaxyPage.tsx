@@ -16,6 +16,7 @@ export default function GalaxyPage() {
   const { user, logout } = useAuthStore();
   const { moments, isLoading, fetchMoments } = useMomentStore();
   const [selectedMoment, setSelectedMoment] = useState<Moment | null>(null);
+  const [viewMode, setViewMode] = useState<'galaxy' | 'relations'>('galaxy');
   const [showControls, setShowControls] = useState(true);
   const [filterStart, setFilterStart] = useState<Date | null>(null);
   const [filterEnd, setFilterEnd] = useState<Date | null>(null);
@@ -55,6 +56,7 @@ export default function GalaxyPage() {
 
   const handleCloseDetails = () => {
     setSelectedMoment(null);
+    setViewMode('galaxy');
   };
 
   // Navigate to next moment in timeline
@@ -168,6 +170,7 @@ export default function GalaxyPage() {
               moments={visibleMoments}
               onMomentClick={handleMomentClick}
               selectedMoment={selectedMoment}
+              viewMode={viewMode}
             />
           </Canvas>
         )}
@@ -379,6 +382,21 @@ export default function GalaxyPage() {
                 onRelationsChange={fetchMoments}
               />
             </div>
+
+            {/* Relations view toggle */}
+            {(selectedMoment.relations?.length ?? 0) > 0 && (
+              <button
+                type="button"
+                onClick={() => setViewMode(viewMode === 'relations' ? 'galaxy' : 'relations')}
+                className={`w-full px-4 py-2 rounded-lg text-sm transition-colors ${
+                  viewMode === 'relations'
+                    ? 'bg-purple-700 hover:bg-purple-800 text-white'
+                    : 'bg-gray-700 hover:bg-gray-600 border border-gray-600 hover:border-purple-500 text-gray-300 hover:text-purple-400'
+                }`}
+              >
+                {viewMode === 'relations' ? 'חזור לגלקסיה ✕' : 'תצוגת הקשרים 🔗'}
+              </button>
+            )}
 
             {/* Media Gallery */}
             {selectedMoment.mediaFiles && selectedMoment.mediaFiles.length > 0 && (

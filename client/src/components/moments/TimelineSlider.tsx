@@ -12,7 +12,7 @@ export default function TimelineSlider({ moments, visibleMoments, onFilterChange
   const [filterActive, setFilterActive] = useState(false);
 
   // Calculate min and max dates from all moments
-  const { minDate, maxDate, yearGroups } = useMemo(() => {
+  const { yearGroups } = useMemo(() => {
     if (moments.length === 0) {
       return { minDate: new Date(), maxDate: new Date(), yearGroups: {} };
     }

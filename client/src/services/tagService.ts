@@ -15,7 +15,7 @@ export interface AttachTagDto {
  * Get all tags for the current user
  */
 export async function getTags(): Promise<Tag[]> {
-  const response = await api.get('/tags');
+  const response = await api.get<{ tags: Tag[] }>('/tags');
   return response.data.tags;
 }
 
@@ -23,7 +23,7 @@ export async function getTags(): Promise<Tag[]> {
  * Create a new tag
  */
 export async function createTag(data: CreateTagDto): Promise<Tag> {
-  const response = await api.post('/tags', data);
+  const response = await api.post<{ tag: Tag }>('/tags', data);
   return response.data.tag;
 }
 
@@ -31,7 +31,7 @@ export async function createTag(data: CreateTagDto): Promise<Tag> {
  * Update a tag
  */
 export async function updateTag(tagId: string, data: Partial<CreateTagDto>): Promise<Tag> {
-  const response = await api.put(`/tags/${tagId}`, data);
+  const response = await api.put<{ tag: Tag }>(`/tags/${tagId}`, data);
   return response.data.tag;
 }
 
@@ -60,6 +60,6 @@ export async function detachTagFromMoment(momentId: string, tagId: string): Prom
  * Get moments by tag
  */
 export async function getMomentsByTag(tagId: string) {
-  const response = await api.get(`/tags/${tagId}/moments`);
+  const response = await api.get<{ moments: any[] }>(`/tags/${tagId}/moments`);
   return response.data.moments;
 }

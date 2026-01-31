@@ -191,7 +191,7 @@ export default function MomentsPage() {
                     max="5"
                     value={formData.importance}
                     onChange={(e) => setFormData({ ...formData, importance: parseInt(e.target.value) })}
-                    className="w-full"
+                    className="w-full py-2"
                   />
                 </div>
               </div>

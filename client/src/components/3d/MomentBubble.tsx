@@ -1,5 +1,5 @@
 import { useRef, useState, useMemo } from 'react';
-import { useFrame, useLoader } from '@react-three/fiber';
+import { useFrame, useLoader, ThreeEvent } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
 import * as THREE from 'three';
 import type { Moment } from '../../types/api.types';
@@ -11,6 +11,7 @@ interface MomentBubbleProps {
   size: number;
   onClick: (moment: Moment) => void;
   isSelected?: boolean;
+  hasRelations?: boolean;
 }
 
 export default function MomentBubble({
@@ -19,11 +20,11 @@ export default function MomentBubble({
   color,
   size,
   onClick,
-  isSelected = false
+  isSelected = false,
+  hasRelations = false,
 }: MomentBubbleProps) {
   const meshRef = useRef<THREE.Mesh>(null);
   const [hovered, setHovered] = useState(false);
-  const [clicked, setClicked] = useState(false);
 
   // Get first image from moment's media
   const firstImage = useMemo(() => {
@@ -63,11 +64,9 @@ export default function MomentBubble({
     }
   });
 
-  const handleClick = (e: THREE.Event) => {
+  const handleClick = (e: ThreeEvent<MouseEvent>) => {
     e.stopPropagation();
-    setClicked(true);
     onClick(moment);
-    setTimeout(() => setClicked(false), 200);
   };
 
   return (
@@ -135,6 +134,19 @@ export default function MomentBubble({
         intensity={isSelected ? 2 : (hovered ? 1.5 : 0.4)}
         distance={isSelected ? size * 5 : size * 3}
       />
+
+      {/* Connection indicator — quiet ring on bubbles that have relations */}
+      {hasRelations && !isSelected && (
+        <mesh position={[position.x, position.y, position.z]} rotation={[Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[size * 1.12, size * 1.18, 64]} />
+          <meshBasicMaterial
+            color="#A78BFA"
+            transparent
+            opacity={0.3}
+            side={THREE.DoubleSide}
+          />
+        </mesh>
+      )}
 
       {/* Selection rings - pulsing outer indicator */}
       {isSelected && (

@@ -3,7 +3,6 @@ import { Stars, Line } from '@react-three/drei';
 import type { Moment } from '../../types/api.types';
 import { transformMomentsTo3D, generateSpiralCurve } from '../../utils/3dHelpers';
 import MomentBubble from './MomentBubble';
-import Connections from './Connections';
 import * as THREE from 'three';
 
 /**
@@ -62,11 +61,9 @@ export default function Galaxy({ moments, onMomentClick, selectedMoment }: Galax
           size={moment3D.size}
           onClick={onMomentClick}
           isSelected={selectedMoment?.id === moment3D.id}
+          hasRelations={(moment3D.moment.relations?.length ?? 0) > 0}
         />
       ))}
-
-      {/* Connection lines between related moments */}
-      <Connections moments={moments} />
 
       {/* Nebula effect around the spiral */}
       <NebulaCloud moments={moments3D} />

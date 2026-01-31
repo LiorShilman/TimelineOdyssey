@@ -4,15 +4,17 @@ import { useFrame, useThree } from '@react-three/fiber';
 import type { Moment } from '../../types/api.types';
 import { transformMomentsTo3D, generateSpiralCurve } from '../../utils/3dHelpers';
 import Galaxy from './Galaxy';
+import RelationConstellation from './RelationConstellation';
 import * as THREE from 'three';
 
 interface SceneProps {
   moments: Moment[];
   onMomentClick: (moment: Moment) => void;
   selectedMoment: Moment | null;
+  viewMode: 'galaxy' | 'relations';
 }
 
-export default function Scene({ moments, onMomentClick, selectedMoment }: SceneProps) {
+export default function Scene({ moments, onMomentClick, selectedMoment, viewMode }: SceneProps) {
   const controlsRef = useRef<any>(null);
 
   return (
@@ -20,7 +22,7 @@ export default function Scene({ moments, onMomentClick, selectedMoment }: SceneP
       {/* Camera setup - wider view for dramatic spiral */}
       <PerspectiveCamera
         makeDefault
-        position={[25, 15, 25]}
+        position={viewMode === 'relations' ? [0, 8, 12] : [25, 15, 25]}
         fov={65}
       />
 
@@ -30,37 +32,66 @@ export default function Scene({ moments, onMomentClick, selectedMoment }: SceneP
         enablePan={true}
         enableZoom={true}
         enableRotate={true}
-        minDistance={8}
-        maxDistance={80}
+        minDistance={viewMode === 'relations' ? 5 : 8}
+        maxDistance={viewMode === 'relations' ? 30 : 80}
         maxPolarAngle={Math.PI}
         minPolarAngle={0}
-        autoRotate={!selectedMoment}
+        autoRotate={viewMode === 'relations' ? false : !selectedMoment}
         autoRotateSpeed={0.3}
       />
 
-      {/* Camera animation controller */}
-      <CameraController
-        moments={moments}
-        selectedMoment={selectedMoment}
-        controlsRef={controlsRef}
-      />
+      {/* Camera animation controller — only active in galaxy view */}
+      {viewMode === 'galaxy' && (
+        <CameraController
+          moments={moments}
+          selectedMoment={selectedMoment}
+          controlsRef={controlsRef}
+        />
+      )}
+
+      {/* Reposition camera when switching to relations view */}
+      {viewMode === 'relations' && selectedMoment && (
+        <ConstellationCameraSetup controlsRef={controlsRef} />
+      )}
 
       {/* Lighting */}
       <Lighting />
 
       {/* Main content */}
       <Suspense fallback={<LoadingPlaceholder />}>
-        <Galaxy
-          moments={moments}
-          onMomentClick={onMomentClick}
-          selectedMoment={selectedMoment}
-        />
+        {viewMode === 'relations' && selectedMoment ? (
+          <RelationConstellation
+            selectedMoment={selectedMoment}
+            allMoments={moments}
+            onMomentClick={onMomentClick}
+          />
+        ) : (
+          <Galaxy
+            moments={moments}
+            onMomentClick={onMomentClick}
+            selectedMoment={selectedMoment}
+          />
+        )}
       </Suspense>
-
-      {/* Grid helper (optional, for debugging) */}
-      {/* <gridHelper args={[50, 50]} /> */}
     </>
   );
+}
+
+/**
+ * One-shot camera repositioning when entering the constellation view.
+ */
+function ConstellationCameraSetup({ controlsRef }: { controlsRef: React.RefObject<any> }) {
+  const { camera } = useThree();
+
+  useEffect(() => {
+    camera.position.set(0, 8, 12);
+    if (controlsRef.current) {
+      controlsRef.current.target.set(0, 0, 0);
+      controlsRef.current.update();
+    }
+  }, [camera, controlsRef]);
+
+  return null;
 }
 
 /**

@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Emotion, TimelineDataPoint } from '@types/moment.types';
+import type { Emotion } from '../types/moment.types';
 
 interface Moment {
   id: string;

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useMomentStore } from '../../stores/momentStoreNew';
 import type { Moment, MediaFile } from '../../types/api.types';
 import MediaUploader from './MediaUploader';
