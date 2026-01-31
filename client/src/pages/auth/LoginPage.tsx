@@ -12,7 +12,7 @@ export default function LoginPage() {
     e.preventDefault();
     try {
       await login({ email, password });
-      navigate('/moments');
+      navigate('/galaxy');
     } catch (error) {
       // Error is handled by the store
     }

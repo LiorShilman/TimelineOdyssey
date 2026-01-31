@@ -16,7 +16,7 @@ export default function RegisterPage() {
     e.preventDefault();
     try {
       await register(formData);
-      navigate('/moments');
+      navigate('/galaxy');
     } catch (error) {
       // Error is handled by the store
     }
