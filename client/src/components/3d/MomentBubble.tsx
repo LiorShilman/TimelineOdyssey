@@ -3,6 +3,7 @@ import { useFrame, useLoader, ThreeEvent } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
 import * as THREE from 'three';
 import type { Moment } from '../../types/api.types';
+import PhotoFrame from './PhotoFrame';
 
 interface MomentBubbleProps {
   moment: Moment;
@@ -24,6 +25,7 @@ export default function MomentBubble({
   hasRelations = false,
 }: MomentBubbleProps) {
   const meshRef = useRef<THREE.Mesh>(null);
+  const bobbingGroupRef = useRef<THREE.Group>(null);
   const [hovered, setHovered] = useState(false);
 
   // Get first image from moment's media
@@ -39,13 +41,15 @@ export default function MomentBubble({
 
   // Gentle floating animation
   useFrame((state) => {
+    const time = state.clock.getElapsedTime();
+
+    // Bobbing on the group — moves bubble + photo frame together
+    if (bobbingGroupRef.current) {
+      bobbingGroupRef.current.position.y = position.y + Math.sin(time * 0.5 + position.x) * 0.1;
+    }
+
     if (meshRef.current) {
-      const time = state.clock.getElapsedTime();
-
-      // Gentle bobbing motion
-      meshRef.current.position.y = position.y + Math.sin(time * 0.5 + position.x) * 0.1;
-
-      // Slow rotation
+      // Slow rotation (sphere only)
       meshRef.current.rotation.y += 0.003;
 
       // Scale: only slight bump on hover, no change on selected (camera zooms instead)
@@ -58,7 +62,6 @@ export default function MomentBubble({
 
     // Animate selection ring pulse
     if (ringRef.current && isSelected) {
-      const time = state.clock.getElapsedTime();
       const pulse = 1 + Math.sin(time * 2) * 0.08;
       ringRef.current.scale.set(pulse, pulse, pulse);
     }
@@ -71,43 +74,51 @@ export default function MomentBubble({
 
   return (
     <group>
-      <mesh
-        ref={meshRef}
-        position={[position.x, position.y, position.z]}
-        onClick={handleClick}
-        onPointerOver={(e) => {
-          e.stopPropagation();
-          setHovered(true);
-          document.body.style.cursor = 'pointer';
-        }}
-        onPointerOut={() => {
-          setHovered(false);
-          document.body.style.cursor = 'auto';
-        }}
-      >
-        <sphereGeometry args={[size, 32, 32]} />
-        {texture ? (
-          <meshStandardMaterial
-            map={texture}
-            emissive={color}
-            emissiveIntensity={hovered ? 0.1 : 0.03}
-            metalness={0.05}
-            roughness={0.15}
-            transparent
-            opacity={0.7}
-          />
-        ) : (
-          <meshStandardMaterial
-            color={color}
-            emissive={color}
-            emissiveIntensity={isSelected ? 0.6 : (hovered ? 0.35 : 0.2)}
-            metalness={0.3}
-            roughness={0.4}
-            transparent
-            opacity={isSelected ? 0.8 : 0.65}
-          />
+      {/* Bobbing group: bubble sphere + photo frame move together */}
+      <group ref={bobbingGroupRef} position={[position.x, position.y, position.z]}>
+        <mesh
+          ref={meshRef}
+          position={[0, 0, 0]}
+          onClick={handleClick}
+          onPointerOver={(e) => {
+            e.stopPropagation();
+            setHovered(true);
+            document.body.style.cursor = 'pointer';
+          }}
+          onPointerOut={() => {
+            setHovered(false);
+            document.body.style.cursor = 'auto';
+          }}
+        >
+          <sphereGeometry args={[size, 32, 32]} />
+          {texture ? (
+            <meshStandardMaterial
+              map={texture}
+              emissive={color}
+              emissiveIntensity={hovered ? 0.1 : 0.03}
+              metalness={0.05}
+              roughness={0.15}
+              transparent
+              opacity={0.7}
+            />
+          ) : (
+            <meshStandardMaterial
+              color={color}
+              emissive={color}
+              emissiveIntensity={isSelected ? 0.6 : (hovered ? 0.35 : 0.2)}
+              metalness={0.3}
+              roughness={0.4}
+              transparent
+              opacity={isSelected ? 0.8 : 0.65}
+            />
+          )}
+        </mesh>
+
+        {/* Photo frame — only when there is an image texture */}
+        {texture && (
+          <PhotoFrame texture={texture} bubbleSize={size} offsetX={size * 2.2} />
         )}
-      </mesh>
+      </group>
 
       {/* Tooltip on hover */}
       {hovered && (

@@ -4,6 +4,7 @@ import type { Moment, MediaFile } from '../../types/api.types';
 import MediaUploader from './MediaUploader';
 import MediaGallery from './MediaGallery';
 import TagManager from './TagManager';
+import RelationManager from './RelationManager';
 import { mediaService } from '../../services/mediaService';
 import { toast } from 'sonner';
 
@@ -13,7 +14,7 @@ interface EditMomentModalProps {
 }
 
 export default function EditMomentModal({ moment, onClose }: EditMomentModalProps) {
-  const { updateMoment, isLoading } = useMomentStore();
+  const { updateMoment, isLoading, moments } = useMomentStore();
   const [formData, setFormData] = useState({
     title: moment.title,
     description: moment.description || '',
@@ -150,6 +151,20 @@ export default function EditMomentModal({ moment, onClose }: EditMomentModalProp
                 momentId={moment.id}
                 existingTags={moment.tags || []}
                 onTagsChange={() => {
+                  const { fetchMoments } = useMomentStore.getState();
+                  fetchMoments();
+                }}
+              />
+            </div>
+
+            {/* Relations */}
+            <div>
+              <label className="block text-sm font-medium mb-2">קשרים בין אירועים</label>
+              <RelationManager
+                momentId={moment.id}
+                existingRelations={moment.relations || []}
+                allMoments={moments}
+                onRelationsChange={() => {
                   const { fetchMoments } = useMomentStore.getState();
                   fetchMoments();
                 }}
