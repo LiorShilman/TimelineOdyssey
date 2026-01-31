@@ -27,9 +27,10 @@ interface GalaxyProps {
   moments: Moment[];
   onMomentClick: (moment: Moment) => void;
   selectedMoment?: Moment | null;
+  dimmedIds?: Set<string> | null;
 }
 
-export default function Galaxy({ moments, onMomentClick, selectedMoment }: GalaxyProps) {
+export default function Galaxy({ moments, onMomentClick, selectedMoment, dimmedIds }: GalaxyProps) {
   // Transform moments to 3D positioned objects
   const moments3D = useMemo(() => {
     return transformMomentsTo3D(moments);
@@ -63,6 +64,7 @@ export default function Galaxy({ moments, onMomentClick, selectedMoment }: Galax
           isSelected={selectedMoment?.id === moment3D.id}
           hasRelations={(moment3D.moment.relations?.length ?? 0) > 0}
           isFlagged={moment3D.moment.flagged}
+          isDimmed={dimmedIds?.has(moment3D.id) ?? false}
         />
       ))}
 

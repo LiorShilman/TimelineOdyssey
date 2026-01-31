@@ -12,9 +12,10 @@ interface SceneProps {
   onMomentClick: (moment: Moment) => void;
   selectedMoment: Moment | null;
   viewMode: 'galaxy' | 'relations';
+  dimmedIds?: Set<string> | null;
 }
 
-export default function Scene({ moments, onMomentClick, selectedMoment, viewMode }: SceneProps) {
+export default function Scene({ moments, onMomentClick, selectedMoment, viewMode, dimmedIds }: SceneProps) {
   const controlsRef = useRef<any>(null);
 
   return (
@@ -73,6 +74,7 @@ export default function Scene({ moments, onMomentClick, selectedMoment, viewMode
             moments={moments}
             onMomentClick={onMomentClick}
             selectedMoment={selectedMoment}
+            dimmedIds={dimmedIds}
           />
         )}
       </Suspense>

@@ -14,6 +14,7 @@ interface MomentBubbleProps {
   isSelected?: boolean;
   hasRelations?: boolean;
   isFlagged?: boolean;
+  isDimmed?: boolean;
 }
 
 export default function MomentBubble({
@@ -25,6 +26,7 @@ export default function MomentBubble({
   isSelected = false,
   hasRelations = false,
   isFlagged = false,
+  isDimmed = false,
 }: MomentBubbleProps) {
   const meshRef = useRef<THREE.Mesh>(null);
   const bobbingGroupRef = useRef<THREE.Group>(null);
@@ -96,11 +98,11 @@ export default function MomentBubble({
           <meshStandardMaterial
             color={color}
             emissive={color}
-            emissiveIntensity={isSelected ? 0.9 : (hovered ? 0.6 : 0.4)}
+            emissiveIntensity={isDimmed ? 0.08 : (isSelected ? 0.9 : (hovered ? 0.6 : 0.4))}
             metalness={0.1}
             roughness={0.2}
             transparent
-            opacity={isSelected ? 0.7 : 0.6}
+            opacity={isDimmed ? 0.15 : (isSelected ? 0.7 : 0.6)}
           />
         </mesh>
 
@@ -110,19 +112,19 @@ export default function MomentBubble({
           <meshBasicMaterial
             color={color}
             transparent
-            opacity={isSelected ? 0.15 : (hovered ? 0.1 : 0.06)}
+            opacity={isDimmed ? 0.02 : (isSelected ? 0.15 : (hovered ? 0.1 : 0.06))}
             side={THREE.BackSide}
           />
         </mesh>
 
         {/* Photo frame — only when there is an image texture */}
-        {texture && (
+        {texture && !isDimmed && (
           <PhotoFrame texture={texture} bubbleSize={size} offsetX={size * 2.5} />
         )}
       </group>
 
       {/* Tooltip on hover */}
-      {hovered && (
+      {hovered && !isDimmed && (
         <Html
           position={[position.x, position.y + size + 0.5, position.z]}
           center
@@ -143,12 +145,12 @@ export default function MomentBubble({
       <pointLight
         position={[position.x, position.y, position.z]}
         color={color}
-        intensity={isSelected ? 2.5 : (hovered ? 1.8 : 0.6)}
-        distance={isSelected ? size * 6 : size * 4}
+        intensity={isDimmed ? 0.05 : (isSelected ? 2.5 : (hovered ? 1.8 : 0.6))}
+        distance={isDimmed ? size * 2 : (isSelected ? size * 6 : size * 4)}
       />
 
       {/* Connection indicator — visible ring on bubbles that have relations */}
-      {hasRelations && !isSelected && (
+      {hasRelations && !isSelected && !isDimmed && (
         <group position={[position.x, position.y, position.z]} rotation={[Math.PI / 2, 0, 0]}>
           {/* Outer glow ring */}
           <mesh>
@@ -174,7 +176,7 @@ export default function MomentBubble({
       )}
 
       {/* Flag indicator — golden orb above the bubble */}
-      {isFlagged && (
+      {isFlagged && !isDimmed && (
         <group position={[position.x, position.y + size * 1.8, position.z]}>
           {/* Glow halo */}
           <mesh>

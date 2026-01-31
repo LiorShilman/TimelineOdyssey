@@ -14,26 +14,44 @@ import { he } from 'date-fns/locale';
 export default function GalaxyPage() {
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
-  const { moments, isLoading, fetchMoments, updateMoment } = useMomentStore();
+  const { moments, isLoading, fetchMoments, updateMoment, createMoment } = useMomentStore();
   const [selectedMoment, setSelectedMoment] = useState<Moment | null>(null);
   const [viewMode, setViewMode] = useState<'galaxy' | 'relations'>('galaxy');
   const [showControls, setShowControls] = useState(true);
   const [filterStart, setFilterStart] = useState<Date | null>(null);
   const [filterEnd, setFilterEnd] = useState<Date | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedEmotions, setSelectedEmotions] = useState<Set<string>>(new Set());
+  const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set());
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [quickCreateForm, setQuickCreateForm] = useState({ title: '', momentDate: '', emotion: 'neutral' });
 
   useEffect(() => {
     fetchMoments();
   }, []);
 
-  // Filter moments by date range
+  // Filter moments by date range + search
   const visibleMoments = useMemo(() => {
-    if (!filterStart || !filterEnd) return moments;
+    let filtered = moments;
 
-    return moments.filter(m => {
-      const date = new Date(m.momentDate);
-      return date >= filterStart && date <= filterEnd;
-    });
-  }, [moments, filterStart, filterEnd]);
+    if (filterStart && filterEnd) {
+      filtered = filtered.filter(m => {
+        const date = new Date(m.momentDate);
+        return date >= filterStart && date <= filterEnd;
+      });
+    }
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      filtered = filtered.filter(m =>
+        m.title.toLowerCase().includes(q) ||
+        (m.description || '').toLowerCase().includes(q) ||
+        (m.tags || []).some(mt => mt.tag.name.toLowerCase().includes(q))
+      );
+    }
+
+    return filtered;
+  }, [moments, filterStart, filterEnd, searchQuery]);
 
   const handleFilterChange = useCallback((start: Date | null, end: Date | null) => {
     setFilterStart(start);
@@ -44,6 +62,67 @@ export default function GalaxyPage() {
   const sortedMoments = [...visibleMoments].sort(
     (a, b) => new Date(a.momentDate).getTime() - new Date(b.momentDate).getTime()
   );
+
+  // Collect unique tags across all moments for filter pills
+  const uniqueTags = useMemo(() => {
+    const seen = new Map<string, string>();
+    moments.forEach(m => {
+      (m.tags || []).forEach(mt => {
+        if (!seen.has(mt.tag.name)) seen.set(mt.tag.name, mt.tag.color || '#9370DB');
+      });
+    });
+    return Array.from(seen.entries()).map(([name, color]) => ({ name, color }));
+  }, [moments]);
+
+  // IDs of moments that should be dimmed (emotion/tag filter active but moment doesn't match)
+  const dimmedIds = useMemo(() => {
+    if (selectedEmotions.size === 0 && selectedTags.size === 0) return null;
+    const dimmed = new Set<string>();
+    visibleMoments.forEach(m => {
+      const emotionMatch = selectedEmotions.size === 0 || selectedEmotions.has(m.emotion || 'neutral');
+      const tagMatch = selectedTags.size === 0 || (m.tags || []).some(mt => selectedTags.has(mt.tag.name));
+      if (!emotionMatch || !tagMatch) dimmed.add(m.id);
+    });
+    return dimmed;
+  }, [visibleMoments, selectedEmotions, selectedTags]);
+
+  const toggleEmotion = (emotion: string) => {
+    setSelectedEmotions(prev => {
+      const next = new Set(prev);
+      next.has(emotion) ? next.delete(emotion) : next.add(emotion);
+      return next;
+    });
+  };
+
+  const toggleTag = (tagName: string) => {
+    setSelectedTags(prev => {
+      const next = new Set(prev);
+      next.has(tagName) ? next.delete(tagName) : next.add(tagName);
+      return next;
+    });
+  };
+
+  const clearFilters = () => {
+    setSelectedEmotions(new Set());
+    setSelectedTags(new Set());
+  };
+
+  const openCreateModal = () => {
+    setQuickCreateForm({ title: '', momentDate: new Date().toISOString().slice(0, 16), emotion: 'neutral' });
+    setShowCreateModal(true);
+  };
+
+  const handleQuickCreate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await createMoment({
+        title: quickCreateForm.title,
+        momentDate: new Date(quickCreateForm.momentDate).toISOString(),
+        emotion: quickCreateForm.emotion as 'happy' | 'sad' | 'exciting' | 'nostalgic' | 'neutral',
+      });
+      setShowCreateModal(false);
+    } catch {}
+  };
 
   const handleLogout = async () => {
     await logout();
@@ -94,6 +173,7 @@ export default function GalaxyPage() {
   // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLSelectElement) return;
       if (e.key === 'ArrowRight') {
         e.preventDefault();
         handlePreviousMoment(); // Right arrow = go back in time (RTL)
@@ -115,7 +195,15 @@ export default function GalaxyPage() {
       <header className="absolute top-0 left-0 right-0 z-10 bg-gradient-to-b from-gray-900 to-transparent">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
           <h1 className="text-2xl font-bold text-white">🌌 Timeline Odyssey</h1>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="חיפוש רגעים..."
+              className="px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 w-52"
+              dir="rtl"
+            />
             <button
               onClick={() => navigate('/moments')}
               className="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors text-white text-sm"
@@ -132,6 +220,49 @@ export default function GalaxyPage() {
           </div>
         </div>
       </header>
+
+      {/* Emotion & tag filter pills */}
+      {!selectedMoment && (
+        <div className="absolute top-16 left-0 right-0 z-10 px-4 py-2 flex items-center gap-2 flex-wrap">
+          {[
+            { key: 'happy', label: '😊 שמח', active: 'bg-yellow-500 text-white' },
+            { key: 'sad', label: '😢 עצוב', active: 'bg-blue-500 text-white' },
+            { key: 'exciting', label: '🎉 מרגש', active: 'bg-orange-500 text-white' },
+            { key: 'nostalgic', label: '🌅 נוסטלגי', active: 'bg-purple-500 text-white' },
+            { key: 'neutral', label: '😐 נייטרלי', active: 'bg-gray-500 text-white' },
+          ].map(({ key, label, active }) => (
+            <button
+              key={key}
+              onClick={() => toggleEmotion(key)}
+              className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
+                selectedEmotions.has(key) ? active : 'bg-gray-800 bg-opacity-80 text-gray-300 hover:bg-gray-700 border border-gray-600'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+          {uniqueTags.map(tag => (
+            <button
+              key={tag.name}
+              onClick={() => toggleTag(tag.name)}
+              className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
+                selectedTags.has(tag.name) ? 'text-white shadow-lg' : 'bg-gray-800 bg-opacity-80 text-gray-300 hover:bg-gray-700 border border-gray-600'
+              }`}
+              style={selectedTags.has(tag.name) ? { backgroundColor: tag.color } : {}}
+            >
+              🏷️ {tag.name}
+            </button>
+          ))}
+          {(selectedEmotions.size > 0 || selectedTags.size > 0) && (
+            <button
+              onClick={clearFilters}
+              className="px-3 py-1 rounded-full text-xs text-red-400 hover:text-red-300 border border-red-800 hover:border-red-600 transition-colors"
+            >
+              ✕ נקה
+            </button>
+          )}
+        </div>
+      )}
 
       {/* 3D Canvas */}
       <div className="h-full w-full">
@@ -171,6 +302,7 @@ export default function GalaxyPage() {
               onMomentClick={handleMomentClick}
               selectedMoment={selectedMoment}
               viewMode={viewMode}
+              dimmedIds={dimmedIds}
             />
           </Canvas>
         )}
@@ -434,6 +566,94 @@ export default function GalaxyPage() {
               >
                 ערוך רגע
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* FAB — create moment from galaxy */}
+      {!selectedMoment && (
+        <button
+          onClick={openCreateModal}
+          className="absolute bottom-40 right-4 z-20 w-14 h-14 bg-purple-600 hover:bg-purple-500 rounded-full shadow-lg shadow-purple-900 flex items-center justify-center transition-all hover:scale-110 active:scale-95"
+          title="צור רגע חדש"
+        >
+          <span className="text-white text-2xl leading-none">+</span>
+        </button>
+      )}
+
+      {/* Quick-create modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-800 rounded-lg w-full max-w-md">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-5">
+                <h2 className="text-xl font-bold text-white">צור רגע חדש</h2>
+                <button
+                  onClick={() => setShowCreateModal(false)}
+                  className="text-gray-400 hover:text-white text-2xl leading-none"
+                >
+                  ×
+                </button>
+              </div>
+
+              <form onSubmit={handleQuickCreate} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">כותרת *</label>
+                  <input
+                    type="text"
+                    required
+                    autoFocus
+                    value={quickCreateForm.title}
+                    onChange={(e) => setQuickCreateForm({ ...quickCreateForm, title: e.target.value })}
+                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    placeholder="הכותרת של הרגע..."
+                    dir="rtl"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">תאריך ושעה *</label>
+                  <input
+                    type="datetime-local"
+                    required
+                    value={quickCreateForm.momentDate}
+                    onChange={(e) => setQuickCreateForm({ ...quickCreateForm, momentDate: e.target.value })}
+                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">רגש</label>
+                  <select
+                    value={quickCreateForm.emotion}
+                    onChange={(e) => setQuickCreateForm({ ...quickCreateForm, emotion: e.target.value })}
+                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  >
+                    <option value="happy">😊 שמח</option>
+                    <option value="sad">😢 עצוב</option>
+                    <option value="exciting">🎉 מרגש</option>
+                    <option value="nostalgic">🌅 נוסטלגי</option>
+                    <option value="neutral">😐 נייטרלי</option>
+                  </select>
+                </div>
+
+                <div className="flex justify-end gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowCreateModal(false)}
+                    className="px-5 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors text-white text-sm"
+                  >
+                    ביטול
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors text-white text-sm font-medium"
+                  >
+                    צור רגע
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         </div>
