@@ -1,9 +1,15 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import { Stars, Line } from '@react-three/drei';
 import type { Moment } from '../../types/api.types';
 import { transformMomentsTo3D, generateSpiralCurve } from '../../utils/3dHelpers';
 import MomentBubble from './MomentBubble';
 import * as THREE from 'three';
+
+const RELATION_COLORS: Record<string, string> = {
+  same_people: '#FF69B4',
+  same_location: '#32CD32',
+  same_event: '#FFD700',
+};
 
 /**
  * Returns a CanvasTexture with a soft white circle — used as the particle
@@ -31,10 +37,53 @@ interface GalaxyProps {
 }
 
 export default function Galaxy({ moments, onMomentClick, selectedMoment, dimmedIds }: GalaxyProps) {
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
+
   // Transform moments to 3D positioned objects
   const moments3D = useMemo(() => {
     return transformMomentsTo3D(moments);
   }, [moments]);
+
+  const handleHoverChange = useCallback((id: string, isHovered: boolean) => {
+    setHoveredId(isHovered ? id : null);
+  }, []);
+
+  // Compute relation lines for the currently hovered bubble
+  const hoverLines = useMemo(() => {
+    if (!hoveredId) return [];
+    const hovered = moments3D.find(m => m.id === hoveredId);
+    if (!hovered || (hovered.moment.relations?.length ?? 0) === 0) return [];
+
+    return (hovered.moment.relations || []).map(rel => {
+      const target = moments3D.find(m => m.id === rel.relatedMomentId);
+      if (!target) return null;
+      // Skip lines to dimmed targets
+      if (dimmedIds?.has(target.id)) return null;
+
+      const start = hovered.position;
+      const end = target.position;
+      const color = RELATION_COLORS[rel.relationType] || '#A78BFA';
+
+      // Offset start/end inward by bubble radii so lines emerge from surfaces
+      const dir = new THREE.Vector3().subVectors(end, start).normalize();
+      const startOff = start.clone().add(dir.clone().multiplyScalar(hovered.size));
+      const endOff = end.clone().add(dir.clone().multiplyScalar(-target.size));
+
+      // Gentle arc: pull midpoint perpendicular to the line
+      const mid = new THREE.Vector3().addVectors(startOff, endOff).multiplyScalar(0.5);
+      const up = new THREE.Vector3(0, 1, 0);
+      const perp = new THREE.Vector3().crossVectors(dir, up).normalize();
+      // If dir is nearly vertical, perp will be ~zero; fall back to world X
+      if (perp.length() < 0.01) perp.set(1, 0, 0);
+      mid.add(perp.multiplyScalar(start.distanceTo(end) * 0.15));
+
+      const curve = new THREE.QuadraticBezierCurve3(startOff, mid, endOff);
+      const points = curve.getPoints(24);
+      const midPoint = curve.getPoint(0.5);
+
+      return { points, color, mid: midPoint };
+    }).filter(Boolean) as { points: THREE.Vector3[]; color: string; mid: THREE.Vector3 }[];
+  }, [hoveredId, moments3D, dimmedIds]);
 
   return (
     <>
@@ -52,6 +101,15 @@ export default function Galaxy({ moments, onMomentClick, selectedMoment, dimmedI
       {/* Ambient particles in the galaxy */}
       <AmbientParticles />
 
+      {/* Hover relation lines */}
+      {hoverLines.map((line, i) => (
+        <group key={i}>
+          <Line points={line.points} color={line.color} lineWidth={3} transparent opacity={0.1} />
+          <Line points={line.points} color={line.color} lineWidth={1} transparent opacity={0.6} />
+          <pointLight position={[line.mid.x, line.mid.y, line.mid.z]} color={line.color} intensity={0.5} distance={5} />
+        </group>
+      ))}
+
       {/* Moment bubbles */}
       {moments3D.map((moment3D) => (
         <MomentBubble
@@ -61,6 +119,7 @@ export default function Galaxy({ moments, onMomentClick, selectedMoment, dimmedI
           color={moment3D.color}
           size={moment3D.size}
           onClick={onMomentClick}
+          onHoverChange={handleHoverChange}
           isSelected={selectedMoment?.id === moment3D.id}
           hasRelations={(moment3D.moment.relations?.length ?? 0) > 0}
           isFlagged={moment3D.moment.flagged}

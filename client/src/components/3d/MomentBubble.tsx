@@ -11,6 +11,7 @@ interface MomentBubbleProps {
   color: string;
   size: number;
   onClick: (moment: Moment) => void;
+  onHoverChange?: (id: string, isHovered: boolean) => void;
   isSelected?: boolean;
   hasRelations?: boolean;
   isFlagged?: boolean;
@@ -23,6 +24,7 @@ export default function MomentBubble({
   color,
   size,
   onClick,
+  onHoverChange,
   isSelected = false,
   hasRelations = false,
   isFlagged = false,
@@ -88,10 +90,12 @@ export default function MomentBubble({
             e.stopPropagation();
             setHovered(true);
             document.body.style.cursor = 'pointer';
+            onHoverChange?.(moment.id, true);
           }}
           onPointerOut={() => {
             setHovered(false);
             document.body.style.cursor = 'auto';
+            onHoverChange?.(moment.id, false);
           }}
         >
           <sphereGeometry args={[size, 32, 32]} />
