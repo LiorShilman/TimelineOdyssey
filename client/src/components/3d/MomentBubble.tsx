@@ -115,7 +115,7 @@ export default function MomentBubble({
 
         {/* Photo frame — only when there is an image texture */}
         {texture && (
-          <PhotoFrame texture={texture} bubbleSize={size} offsetX={size * 2.2} />
+          <PhotoFrame texture={texture} bubbleSize={size} offsetX={size * 2.5} />
         )}
       </group>
 

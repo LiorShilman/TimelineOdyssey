@@ -13,7 +13,7 @@ export default function PhotoFrame({ texture, bubbleSize, offsetX }: PhotoFrameP
 
   // Derive photo dimensions from the texture's actual image, preserving aspect ratio.
   // Cap the longer edge at bubbleSize * 2 so the frame stays proportional to the bubble.
-  const maxDim = bubbleSize * 2;
+  const maxDim = bubbleSize * 2.4;
   const imgW = texture.image?.width ?? 1;
   const imgH = texture.image?.height ?? 1;
   const aspect = imgW / imgH;
