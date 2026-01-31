@@ -40,6 +40,9 @@ export default function Scene({ moments, onMomentClick, selectedMoment, viewMode
         autoRotateSpeed={0.3}
       />
 
+      {/* Keyboard vertical pan — Up/Down arrows */}
+      <KeyboardPanController controlsRef={controlsRef} />
+
       {/* Camera animation controller — only active in galaxy view */}
       {viewMode === 'galaxy' && (
         <CameraController
@@ -90,6 +93,52 @@ function ConstellationCameraSetup({ controlsRef }: { controlsRef: React.RefObjec
       controlsRef.current.update();
     }
   }, [camera, controlsRef]);
+
+  return null;
+}
+
+/**
+ * Vertical pan via Up/Down arrow keys.
+ * Moves camera + OrbitControls target together (same as SHIFT + drag),
+ * with speed proportional to the current distance so it feels consistent at any zoom level.
+ */
+function KeyboardPanController({ controlsRef }: { controlsRef: React.RefObject<any> }) {
+  const { camera } = useThree();
+  const keysDown = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+        e.preventDefault();
+        keysDown.current.add(e.key);
+      }
+    };
+    const onKeyUp = (e: KeyboardEvent) => {
+      keysDown.current.delete(e.key);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('keyup', onKeyUp);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('keyup', onKeyUp);
+    };
+  }, []);
+
+  useFrame((_state, delta) => {
+    if (!controlsRef.current || keysDown.current.size === 0) return;
+
+    const dist = camera.position.distanceTo(controlsRef.current.target);
+    const speed = dist * 0.8;
+    let dy = 0;
+    if (keysDown.current.has('ArrowUp')) dy += speed * delta;
+    if (keysDown.current.has('ArrowDown')) dy -= speed * delta;
+
+    if (dy !== 0) {
+      camera.position.y += dy;
+      controlsRef.current.target.y += dy;
+      controlsRef.current.update();
+    }
+  });
 
   return null;
 }
