@@ -42,6 +42,7 @@ export interface Moment {
   deletedAt: string | null;
   mediaFiles: MediaFile[];
   tags: MomentTag[];
+  relations: MomentRelation[];
 }
 
 export interface MediaFile {
@@ -73,6 +74,18 @@ export interface MomentTag {
   momentId: string;
   tagId: string;
   tag: Tag;
+}
+
+export interface MomentRelation {
+  momentId: string;
+  relatedMomentId: string;
+  relationType: 'same_people' | 'same_location' | 'same_event';
+  relatedMoment: {
+    id: string;
+    title: string;
+    momentDate: string;
+    emotion: string | null;
+  };
 }
 
 export interface MomentStats {

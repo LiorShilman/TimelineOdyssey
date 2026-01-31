@@ -7,6 +7,7 @@ import type { Moment } from '../types/api.types';
 import Scene from '../components/3d/Scene';
 import MediaGallery from '../components/moments/MediaGallery';
 import TimelineSlider from '../components/moments/TimelineSlider';
+import RelationManager from '../components/moments/RelationManager';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 
@@ -286,7 +287,7 @@ export default function GalaxyPage() {
       {selectedMoment && (
         <div className="absolute top-0 left-0 bottom-0 w-96 bg-gray-900 bg-opacity-95 border-r border-gray-700 p-6 overflow-y-auto z-20 transition-all duration-300">
           <div className="flex justify-between items-start mb-4">
-            <h2 className="text-2xl font-bold text-white">פרטי רגע</h2>
+            <h2 className="text-2xl font-bold text-white">רגע פרטי</h2>
             <button
               onClick={handleCloseDetails}
               className="text-gray-400 hover:text-white text-2xl"
@@ -367,6 +368,17 @@ export default function GalaxyPage() {
                 </div>
               </div>
             )}
+
+            {/* Relations */}
+            <div>
+              <h4 className="text-sm font-medium text-gray-300 mb-2">קשרים בין אירועים</h4>
+              <RelationManager
+                momentId={selectedMoment.id}
+                existingRelations={selectedMoment.relations || []}
+                allMoments={moments}
+                onRelationsChange={fetchMoments}
+              />
+            </div>
 
             {/* Media Gallery */}
             {selectedMoment.mediaFiles && selectedMoment.mediaFiles.length > 0 && (

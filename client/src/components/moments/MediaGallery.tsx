@@ -28,7 +28,7 @@ export default function MediaGallery({ media, onDelete, editable = false }: Medi
                 <img
                   src={item.thumbnailUrl || item.url}
                   alt={item.fileName}
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                  className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-300"
                 />
               </div>
             ) : item.fileType === 'video' ? (

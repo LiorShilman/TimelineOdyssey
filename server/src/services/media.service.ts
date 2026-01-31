@@ -59,8 +59,8 @@ async function processImage(
 async function generateThumbnail(buffer: Buffer): Promise<Buffer> {
   return sharp(buffer)
     .resize(300, 300, {
-      fit: 'cover',
-      position: 'center',
+      fit: 'inside',
+      withoutEnlargement: true,
     })
     .jpeg({ quality: 80 })
     .toBuffer();

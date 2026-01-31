@@ -125,6 +125,18 @@ export async function getMoments(userId: string, filters?: GetMomentsFilters) {
           tag: true,
         },
       },
+      relations: {
+        include: {
+          relatedMoment: {
+            select: {
+              id: true,
+              title: true,
+              momentDate: true,
+              emotion: true,
+            },
+          },
+        },
+      },
     },
     orderBy: {
       momentDate: 'desc',

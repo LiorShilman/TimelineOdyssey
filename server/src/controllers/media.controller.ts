@@ -77,6 +77,12 @@ export async function deleteMediaController(
 
     res.json({ message: 'Media file deleted successfully' });
   } catch (error: any) {
+    if (error.message === 'Media file not found') {
+      return res.status(404).json({ error: 'Not Found', message: error.message });
+    }
+    if (error.message === 'Unauthorized') {
+      return res.status(403).json({ error: 'Forbidden', message: error.message });
+    }
     next(error);
   }
 }

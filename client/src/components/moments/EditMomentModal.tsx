@@ -48,11 +48,15 @@ export default function EditMomentModal({ moment, onClose }: EditMomentModalProp
 
     try {
       await mediaService.deleteMedia(mediaId);
-      setMedia((prev) => prev.filter((m) => m.id !== mediaId));
-      toast.success('הקובץ נמחק בהצלחה');
     } catch (error: any) {
-      toast.error('שגיאה במחיקת הקובץ');
+      // 404 means already gone — treat as success
+      if (error.response?.status !== 404) {
+        toast.error('שגיאה במחיקת הקובץ');
+        return;
+      }
     }
+    setMedia((prev) => prev.filter((m) => m.id !== mediaId));
+    toast.success('הקובץ נמחק בהצלחה');
   };
 
   return (

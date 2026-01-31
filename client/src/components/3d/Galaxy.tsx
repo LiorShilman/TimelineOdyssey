@@ -3,7 +3,26 @@ import { Stars, Line } from '@react-three/drei';
 import type { Moment } from '../../types/api.types';
 import { transformMomentsTo3D, generateSpiralCurve } from '../../utils/3dHelpers';
 import MomentBubble from './MomentBubble';
+import Connections from './Connections';
 import * as THREE from 'three';
+
+/**
+ * Returns a CanvasTexture with a soft white circle — used as the particle
+ * shape so pointsMaterial renders circles instead of squares.
+ */
+function createCircleTexture(): THREE.CanvasTexture {
+  const canvas = document.createElement('canvas');
+  canvas.width = 64;
+  canvas.height = 64;
+  const ctx = canvas.getContext('2d')!;
+  const gradient = ctx.createRadialGradient(32, 32, 0, 32, 32, 30);
+  gradient.addColorStop(0, 'rgba(255,255,255,1)');
+  gradient.addColorStop(0.7, 'rgba(255,255,255,0.8)');
+  gradient.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, 64, 64);
+  return new THREE.CanvasTexture(canvas);
+}
 
 interface GalaxyProps {
   moments: Moment[];
@@ -46,6 +65,9 @@ export default function Galaxy({ moments, onMomentClick, selectedMoment }: Galax
         />
       ))}
 
+      {/* Connection lines between related moments */}
+      <Connections moments={moments} />
+
       {/* Nebula effect around the spiral */}
       <NebulaCloud moments={moments3D} />
 
@@ -59,6 +81,8 @@ export default function Galaxy({ moments, onMomentClick, selectedMoment }: Galax
  * Ambient floating particles for atmosphere
  */
 function AmbientParticles() {
+  const circleTexture = useMemo(() => createCircleTexture(), []);
+
   const particles = useMemo(() => {
     const positions = new Float32Array(2000 * 3); // Increased count
     for (let i = 0; i < 2000; i++) {
@@ -84,10 +108,11 @@ function AmbientParticles() {
         />
       </bufferGeometry>
       <pointsMaterial
-        size={0.08} // Slightly larger
+        size={0.08}
         color="#8B5CF6"
+        map={circleTexture}
         transparent
-        opacity={0.4} // More visible
+        opacity={0.4}
         sizeAttenuation
       />
     </points>
@@ -98,6 +123,8 @@ function AmbientParticles() {
  * Nebula-like cloud effect following the spiral path
  */
 function NebulaCloud({ moments }: { moments: ReturnType<typeof transformMomentsTo3D> }) {
+  const circleTexture = useMemo(() => createCircleTexture(), []);
+
   const nebulaParticles = useMemo(() => {
     if (moments.length < 2) return new Float32Array(0);
 
@@ -153,6 +180,7 @@ function NebulaCloud({ moments }: { moments: ReturnType<typeof transformMomentsT
       <pointsMaterial
         size={0.15}
         color="#C084FC"
+        map={circleTexture}
         transparent
         opacity={0.2}
         sizeAttenuation
@@ -228,23 +256,15 @@ function SpiralPath({ moments }: { moments: ReturnType<typeof transformMomentsTo
         opacity={0.6}
       />
 
-      {/* Per-segment thin lines + midpoint lights */}
+      {/* Midpoint lights along the spiral */}
       {segments.map((seg, i) => (
-        <group key={i}>
-          <Line
-            points={seg.curve}
-            color="#A78BFA"
-            lineWidth={1.5}
-            transparent
-            opacity={0.3}
-          />
-          <pointLight
-            position={[seg.mid.x, seg.mid.y, seg.mid.z]}
-            color="#9370DB"
-            intensity={0.5}
-            distance={3}
-          />
-        </group>
+        <pointLight
+          key={i}
+          position={[seg.mid.x, seg.mid.y, seg.mid.z]}
+          color="#9370DB"
+          intensity={0.5}
+          distance={3}
+        />
       ))}
     </>
   );
