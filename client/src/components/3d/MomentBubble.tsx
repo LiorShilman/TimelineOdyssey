@@ -94,11 +94,22 @@ export default function MomentBubble({
           <meshStandardMaterial
             color={color}
             emissive={color}
-            emissiveIntensity={isSelected ? 0.7 : (hovered ? 0.45 : 0.25)}
-            metalness={0.15}
-            roughness={0.35}
+            emissiveIntensity={isSelected ? 0.9 : (hovered ? 0.6 : 0.4)}
+            metalness={0.1}
+            roughness={0.2}
             transparent
-            opacity={isSelected ? 0.85 : 0.7}
+            opacity={isSelected ? 0.7 : 0.6}
+          />
+        </mesh>
+
+        {/* Glow shell — BackSide renders only the outer surface, creating a soft colored halo */}
+        <mesh position={[0, 0, 0]}>
+          <sphereGeometry args={[size * 1.3, 32, 32]} />
+          <meshBasicMaterial
+            color={color}
+            transparent
+            opacity={isSelected ? 0.15 : (hovered ? 0.1 : 0.06)}
+            side={THREE.BackSide}
           />
         </mesh>
 
@@ -130,8 +141,8 @@ export default function MomentBubble({
       <pointLight
         position={[position.x, position.y, position.z]}
         color={color}
-        intensity={isSelected ? 2 : (hovered ? 1.5 : 0.4)}
-        distance={isSelected ? size * 5 : size * 3}
+        intensity={isSelected ? 2.5 : (hovered ? 1.8 : 0.6)}
+        distance={isSelected ? size * 6 : size * 4}
       />
 
       {/* Connection indicator — quiet ring on bubbles that have relations */}
