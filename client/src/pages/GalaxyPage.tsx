@@ -14,7 +14,7 @@ import { he } from 'date-fns/locale';
 export default function GalaxyPage() {
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
-  const { moments, isLoading, fetchMoments } = useMomentStore();
+  const { moments, isLoading, fetchMoments, updateMoment } = useMomentStore();
   const [selectedMoment, setSelectedMoment] = useState<Moment | null>(null);
   const [viewMode, setViewMode] = useState<'galaxy' | 'relations'>('galaxy');
   const [showControls, setShowControls] = useState(true);
@@ -353,6 +353,25 @@ export default function GalaxyPage() {
                 </p>
               </div>
             </div>
+
+            {/* Flag toggle */}
+            <button
+              type="button"
+              onClick={async () => {
+                await updateMoment(selectedMoment.id, { flagged: !selectedMoment.flagged });
+                await fetchMoments();
+              }}
+              className={`w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${
+                selectedMoment.flagged
+                  ? 'bg-yellow-900 bg-opacity-40 border border-yellow-600 hover:bg-opacity-60'
+                  : 'bg-gray-800 border border-gray-600 hover:border-yellow-600 hover:bg-gray-700'
+              }`}
+            >
+              <span className="text-lg">{selectedMoment.flagged ? '🏴' : '🚩'}</span>
+              <span className={`text-sm font-medium ${selectedMoment.flagged ? 'text-yellow-400' : 'text-gray-300'}`}>
+                {selectedMoment.flagged ? 'רגע מוגדר' : 'הגדר רגע'}
+              </span>
+            </button>
 
             {/* Tags */}
             {selectedMoment.tags && selectedMoment.tags.length > 0 && (

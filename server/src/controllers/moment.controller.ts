@@ -18,7 +18,7 @@ export async function createMomentController(
       });
     }
 
-    const { title, description, momentDate, emotion, importance, locationName, locationLat, locationLng, isDraft } = req.body;
+    const { title, description, momentDate, emotion, importance, locationName, locationLat, locationLng, isDraft, flagged } = req.body;
 
     // Validate required fields
     if (!title || !momentDate) {
@@ -38,6 +38,7 @@ export async function createMomentController(
       locationLat,
       locationLng,
       isDraft,
+      flagged,
     });
 
     res.status(201).json({
@@ -146,7 +147,7 @@ export async function updateMomentController(
     }
 
     const { id } = req.params;
-    const { title, description, momentDate, emotion, importance, locationName, locationLat, locationLng, isDraft } = req.body;
+    const { title, description, momentDate, emotion, importance, locationName, locationLat, locationLng, isDraft, flagged } = req.body;
 
     const moment = await momentService.updateMoment(id, req.user.userId, {
       title,
@@ -158,6 +159,7 @@ export async function updateMomentController(
       locationLat,
       locationLng,
       isDraft,
+      flagged,
     });
 
     res.status(200).json({

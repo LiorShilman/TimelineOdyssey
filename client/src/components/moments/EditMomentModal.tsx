@@ -21,6 +21,7 @@ export default function EditMomentModal({ moment, onClose }: EditMomentModalProp
     momentDate: moment.momentDate.slice(0, 16), // Format for datetime-local
     emotion: moment.emotion || 'neutral',
     importance: moment.importance || 3,
+    flagged: moment.flagged || false,
   });
   const [media, setMedia] = useState<MediaFile[]>(moment.mediaFiles || []);
 
@@ -143,6 +144,22 @@ export default function EditMomentModal({ moment, onClose }: EditMomentModalProp
                 />
               </div>
             </div>
+
+            {/* Flag toggle */}
+            <button
+              type="button"
+              onClick={() => setFormData({ ...formData, flagged: !formData.flagged })}
+              className={`w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${
+                formData.flagged
+                  ? 'bg-yellow-900 bg-opacity-40 border border-yellow-600 hover:bg-opacity-60'
+                  : 'bg-gray-700 border border-gray-600 hover:border-yellow-600 hover:bg-gray-600'
+              }`}
+            >
+              <span className="text-lg">{formData.flagged ? '🏴' : '🚩'}</span>
+              <span className={`text-sm font-medium ${formData.flagged ? 'text-yellow-400' : 'text-gray-300'}`}>
+                {formData.flagged ? 'רגע מוגדר' : 'הגדר רגע'}
+              </span>
+            </button>
 
             {/* Tags */}
             <div>

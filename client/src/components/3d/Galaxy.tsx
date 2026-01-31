@@ -62,6 +62,7 @@ export default function Galaxy({ moments, onMomentClick, selectedMoment }: Galax
           onClick={onMomentClick}
           isSelected={selectedMoment?.id === moment3D.id}
           hasRelations={(moment3D.moment.relations?.length ?? 0) > 0}
+          isFlagged={moment3D.moment.flagged}
         />
       ))}
 

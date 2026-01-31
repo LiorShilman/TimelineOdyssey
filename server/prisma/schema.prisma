@@ -40,6 +40,7 @@ model Moment {
   locationLat  Decimal?  @map("location_lat") @db.Decimal(10, 8)
   locationLng  Decimal?  @map("location_lng") @db.Decimal(11, 8)
   isDraft      Boolean   @default(false) @map("is_draft")
+  flagged      Boolean   @default(false)
   createdAt    DateTime  @default(now()) @map("created_at")
   updatedAt    DateTime  @updatedAt @map("updated_at")
   deletedAt    DateTime? @map("deleted_at")

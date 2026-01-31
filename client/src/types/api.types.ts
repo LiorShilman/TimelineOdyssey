@@ -37,6 +37,7 @@ export interface Moment {
   locationLat: string | null;
   locationLng: string | null;
   isDraft: boolean;
+  flagged: boolean;
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
@@ -117,6 +118,7 @@ export interface CreateMomentRequest {
   locationLat?: number;
   locationLng?: number;
   isDraft?: boolean;
+  flagged?: boolean;
 }
 
 export interface UpdateMomentRequest extends Partial<CreateMomentRequest> {}

@@ -13,6 +13,7 @@ export interface CreateMomentInput {
   locationLat?: number;
   locationLng?: number;
   isDraft?: boolean;
+  flagged?: boolean;
 }
 
 export interface UpdateMomentInput {
@@ -25,6 +26,7 @@ export interface UpdateMomentInput {
   locationLat?: number;
   locationLng?: number;
   isDraft?: boolean;
+  flagged?: boolean;
 }
 
 export interface GetMomentsFilters {
@@ -62,6 +64,7 @@ export async function createMoment(userId: string, input: CreateMomentInput) {
       locationLat: input.locationLat ? new Prisma.Decimal(input.locationLat.toString()) : null,
       locationLng: input.locationLng ? new Prisma.Decimal(input.locationLng.toString()) : null,
       isDraft: input.isDraft ?? false,
+      flagged: input.flagged ?? false,
     },
     include: {
       mediaFiles: true,
@@ -247,6 +250,7 @@ export async function updateMoment(
         locationLng: input.locationLng ? new Prisma.Decimal(input.locationLng.toString()) : null,
       }),
       ...(input.isDraft !== undefined && { isDraft: input.isDraft }),
+      ...(input.flagged !== undefined && { flagged: input.flagged }),
     },
     include: {
       mediaFiles: true,

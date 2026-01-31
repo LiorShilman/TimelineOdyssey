@@ -13,6 +13,7 @@ interface MomentBubbleProps {
   onClick: (moment: Moment) => void;
   isSelected?: boolean;
   hasRelations?: boolean;
+  isFlagged?: boolean;
 }
 
 export default function MomentBubble({
@@ -23,6 +24,7 @@ export default function MomentBubble({
   onClick,
   isSelected = false,
   hasRelations = false,
+  isFlagged = false,
 }: MomentBubbleProps) {
   const meshRef = useRef<THREE.Mesh>(null);
   const bobbingGroupRef = useRef<THREE.Group>(null);
@@ -145,17 +147,53 @@ export default function MomentBubble({
         distance={isSelected ? size * 6 : size * 4}
       />
 
-      {/* Connection indicator — quiet ring on bubbles that have relations */}
+      {/* Connection indicator — visible ring on bubbles that have relations */}
       {hasRelations && !isSelected && (
-        <mesh position={[position.x, position.y, position.z]} rotation={[Math.PI / 2, 0, 0]}>
-          <ringGeometry args={[size * 1.12, size * 1.18, 64]} />
-          <meshBasicMaterial
-            color="#A78BFA"
-            transparent
-            opacity={0.3}
-            side={THREE.DoubleSide}
-          />
-        </mesh>
+        <group position={[position.x, position.y, position.z]} rotation={[Math.PI / 2, 0, 0]}>
+          {/* Outer glow ring */}
+          <mesh>
+            <ringGeometry args={[size * 1.15, size * 1.45, 64]} />
+            <meshBasicMaterial
+              color="#A78BFA"
+              transparent
+              opacity={0.15}
+              side={THREE.DoubleSide}
+            />
+          </mesh>
+          {/* Inner solid ring */}
+          <mesh>
+            <ringGeometry args={[size * 1.2, size * 1.35, 64]} />
+            <meshBasicMaterial
+              color="#C4B5FD"
+              transparent
+              opacity={0.55}
+              side={THREE.DoubleSide}
+            />
+          </mesh>
+        </group>
+      )}
+
+      {/* Flag indicator — golden orb above the bubble */}
+      {isFlagged && (
+        <group position={[position.x, position.y + size * 1.8, position.z]}>
+          {/* Glow halo */}
+          <mesh>
+            <sphereGeometry args={[size * 0.22, 16, 16]} />
+            <meshBasicMaterial color="#FCD34D" transparent opacity={0.2} />
+          </mesh>
+          {/* Core orb */}
+          <mesh>
+            <sphereGeometry args={[size * 0.14, 16, 16]} />
+            <meshStandardMaterial
+              color="#FCD34D"
+              emissive="#FCD34D"
+              emissiveIntensity={1.2}
+              metalness={0.3}
+              roughness={0.1}
+            />
+          </mesh>
+          <pointLight color="#FCD34D" intensity={1.2} distance={size * 4} />
+        </group>
       )}
 
       {/* Selection rings - pulsing outer indicator */}
