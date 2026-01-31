@@ -575,7 +575,7 @@ export default function GalaxyPage() {
       {!selectedMoment && (
         <button
           onClick={openCreateModal}
-          className="absolute bottom-40 right-4 z-20 w-14 h-14 bg-purple-600 hover:bg-purple-500 rounded-full shadow-lg shadow-purple-900 flex items-center justify-center transition-all hover:scale-110 active:scale-95"
+          className="absolute bottom-64 right-4 z-20 w-14 h-14 bg-purple-600 hover:bg-purple-500 rounded-full shadow-lg shadow-purple-900 flex items-center justify-center transition-all hover:scale-110 active:scale-95"
           title="צור רגע חדש"
         >
           <span className="text-white text-2xl leading-none">+</span>
@@ -660,7 +660,7 @@ export default function GalaxyPage() {
       )}
 
       {/* Stats counter and Reset button */}
-      <div className="absolute top-20 right-4 space-y-3">
+      <div className="absolute top-24 right-4 space-y-3">
         <div className="bg-gray-900 bg-opacity-90 border border-gray-700 rounded-lg px-4 py-2">
           <div className="text-center">
             <div className="text-2xl font-bold text-purple-400">{moments.length}</div>
