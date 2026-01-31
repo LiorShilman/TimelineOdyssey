@@ -91,27 +91,15 @@ export default function MomentBubble({
           }}
         >
           <sphereGeometry args={[size, 32, 32]} />
-          {texture ? (
-            <meshStandardMaterial
-              map={texture}
-              emissive={color}
-              emissiveIntensity={hovered ? 0.1 : 0.03}
-              metalness={0.05}
-              roughness={0.15}
-              transparent
-              opacity={0.7}
-            />
-          ) : (
-            <meshStandardMaterial
-              color={color}
-              emissive={color}
-              emissiveIntensity={isSelected ? 0.6 : (hovered ? 0.35 : 0.2)}
-              metalness={0.3}
-              roughness={0.4}
-              transparent
-              opacity={isSelected ? 0.8 : 0.65}
-            />
-          )}
+          <meshStandardMaterial
+            color={color}
+            emissive={color}
+            emissiveIntensity={isSelected ? 0.7 : (hovered ? 0.45 : 0.25)}
+            metalness={0.15}
+            roughness={0.35}
+            transparent
+            opacity={isSelected ? 0.85 : 0.7}
+          />
         </mesh>
 
         {/* Photo frame — only when there is an image texture */}
