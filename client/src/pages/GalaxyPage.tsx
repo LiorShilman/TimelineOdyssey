@@ -502,9 +502,9 @@ export default function GalaxyPage() {
                   : 'bg-gray-800 border border-gray-600 hover:border-yellow-600 hover:bg-gray-700'
               }`}
             >
-              <span className="text-lg">{selectedMoment.flagged ? '🏴' : '🚩'}</span>
+              <span className="text-lg">{selectedMoment.flagged ? '⭐' : '☆'}</span>
               <span className={`text-sm font-medium ${selectedMoment.flagged ? 'text-yellow-400' : 'text-gray-300'}`}>
-                {selectedMoment.flagged ? 'רגע מוגדר' : 'הגדר רגע'}
+                {selectedMoment.flagged ? 'כוכב מסומן' : 'סמן כוכב'}
               </span>
             </button>
 

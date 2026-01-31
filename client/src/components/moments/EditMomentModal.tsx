@@ -156,9 +156,9 @@ export default function EditMomentModal({ moment, onClose }: EditMomentModalProp
                   : 'bg-gray-700 border border-gray-600 hover:border-yellow-600 hover:bg-gray-600'
               }`}
             >
-              <span className="text-lg">{formData.flagged ? '🏴' : '🚩'}</span>
+              <span className="text-lg">{formData.flagged ? '⭐' : '☆'}</span>
               <span className={`text-sm font-medium ${formData.flagged ? 'text-yellow-400' : 'text-gray-300'}`}>
-                {formData.flagged ? 'רגע מוגדר' : 'הגדר רגע'}
+                {formData.flagged ? 'כוכב מסומן' : 'סמן כוכב'}
               </span>
             </button>
 
