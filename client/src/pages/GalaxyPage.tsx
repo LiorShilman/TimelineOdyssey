@@ -8,6 +8,7 @@ import Scene from '../components/3d/Scene';
 import MediaGallery from '../components/moments/MediaGallery';
 import TimelineSlider from '../components/moments/TimelineSlider';
 import RelationManager from '../components/moments/RelationManager';
+import EditMomentModal from '../components/moments/EditMomentModal';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 
@@ -25,6 +26,7 @@ export default function GalaxyPage() {
   const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set());
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [quickCreateForm, setQuickCreateForm] = useState({ title: '', momentDate: '', emotion: 'neutral' });
+  const [editingMoment, setEditingMoment] = useState<Moment | null>(null);
 
   useEffect(() => {
     fetchMoments();
@@ -561,7 +563,7 @@ export default function GalaxyPage() {
 
             <div className="pt-4">
               <button
-                onClick={() => navigate('/moments')}
+                onClick={() => setEditingMoment(selectedMoment)}
                 className="w-full px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors text-white text-sm"
               >
                 ערוך רגע
@@ -569,6 +571,17 @@ export default function GalaxyPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Inline edit modal */}
+      {editingMoment && (
+        <EditMomentModal
+          moment={editingMoment}
+          onClose={() => {
+            setEditingMoment(null);
+            fetchMoments();
+          }}
+        />
       )}
 
       {/* FAB — create moment from galaxy */}

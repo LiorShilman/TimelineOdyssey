@@ -171,6 +171,35 @@ function CameraController({
 
   useEffect(() => {
     if (!selectedMoment) {
+      // If we were previously on a moment, animate back to the default overview position
+      if (prevMomentId.current) {
+        const startCamPos = camera.position.clone();
+        const startTarget = controlsRef.current
+          ? controlsRef.current.target.clone()
+          : new THREE.Vector3();
+
+        const endCamPos = new THREE.Vector3(25, 15, 25);
+        const endTarget = new THREE.Vector3(0, 0, 0);
+
+        // Arc upward through the midpoint for a smooth return
+        const midCam = new THREE.Vector3()
+          .addVectors(startCamPos, endCamPos)
+          .multiplyScalar(0.5);
+        midCam.y += 5;
+
+        const midTarget = new THREE.Vector3()
+          .addVectors(startTarget, endTarget)
+          .multiplyScalar(0.5);
+
+        cameraCurve.current = new THREE.CatmullRomCurve3([startCamPos, midCam, endCamPos]);
+        targetCurve.current = new THREE.CatmullRomCurve3([startTarget, midTarget, endTarget]);
+
+        const pathLen = cameraCurve.current.getLength();
+        animSpeed.current = Math.max(0.5, Math.min(1.2, 25 / pathLen));
+
+        isAnimating.current = true;
+        animationProgress.current = 0;
+      }
       prevMomentId.current = null;
       return;
     }
