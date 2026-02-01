@@ -29,8 +29,11 @@ const PORT = process.env.PORT || 3001;
 
 // Security & CORS Middleware
 app.use(helmet());
+const corsOrigins = (process.env.CLIENT_URL || 'http://localhost:5173')
+  .split(',')
+  .map((s) => s.trim());
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  origin: corsOrigins,
   credentials: true,
 }));
 
@@ -80,7 +83,7 @@ app.use(errorMiddleware);
 server.listen(PORT, () => {
   logger.info(`🚀 Server running on http://localhost:${PORT}`);
   logger.info(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
-  logger.info(`🔒 CORS enabled for: ${process.env.CLIENT_URL || 'http://localhost:5173'}`);
+  logger.info(`🔒 CORS enabled for: ${corsOrigins.join(', ')}`);
 });
 
 // Graceful shutdown
