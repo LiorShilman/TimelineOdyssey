@@ -1,5 +1,5 @@
 import path from 'path';
-import { ALLOWED_FILE_TYPES, MAX_FILE_SIZE } from '../config/storage.config';
+import { ALLOWED_FILE_TYPES, MAX_FILE_SIZE } from '../config/storage.config.js';
 
 /**
  * Validate file type

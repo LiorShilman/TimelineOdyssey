@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import * as mediaService from '../services/media.service';
+import * as mediaService from '../services/media.service.js';
 
 /**
  * Upload media files to a moment

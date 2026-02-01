@@ -19,6 +19,7 @@ interface AuthStore {
   getCurrentUser: () => Promise<void>;
   setTokens: (accessToken: string, refreshToken: string) => void;
   clearAuth: () => void;
+  initAuth: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthStore>((set, get) => ({
@@ -26,7 +27,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   accessToken: null,
   refreshToken: null,
   isAuthenticated: false,
-  isLoading: false,
+  isLoading: typeof window !== 'undefined' && !!localStorage.getItem('refreshToken'),
   error: null,
 
   setTokens: (accessToken, refreshToken) => {
@@ -46,6 +47,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         isAuthenticated: true,
         isLoading: false,
       });
+      localStorage.setItem('refreshToken', response.refreshToken);
       toast.success('התחברת בהצלחה!');
     } catch (error: any) {
       const message = error.response?.data?.message || 'שגיאה בהתחברות';
@@ -67,6 +69,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         isAuthenticated: true,
         isLoading: false,
       });
+      localStorage.setItem('refreshToken', response.refreshToken);
       toast.success('נרשמת בהצלחה!');
     } catch (error: any) {
       const message = error.response?.data?.message || 'שגיאה בהרשמה';
@@ -82,6 +85,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
+      localStorage.removeItem('refreshToken');
       set({
         user: null,
         accessToken: null,
@@ -112,11 +116,33 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
   clearAuth: () => {
     setAuthToken(null);
+    localStorage.removeItem('refreshToken');
     set({
       user: null,
       accessToken: null,
       refreshToken: null,
       isAuthenticated: false,
     });
+  },
+
+  initAuth: async () => {
+    const stored = localStorage.getItem('refreshToken');
+    if (!stored) return;
+
+    set({ isLoading: true });
+    try {
+      const response = await authService.refreshToken(stored);
+      setAuthToken(response.accessToken);
+      set({
+        accessToken: response.accessToken,
+        refreshToken: stored,
+        isAuthenticated: true,
+      });
+      const user = await authService.getCurrentUser();
+      set({ user, isLoading: false });
+    } catch {
+      localStorage.removeItem('refreshToken');
+      set({ isLoading: false });
+    }
   },
 }));

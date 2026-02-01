@@ -1,13 +1,13 @@
 import sharp from 'sharp';
 import { PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import { s3Client, BUCKET_NAME } from '../config/storage.config';
-import prisma from '../config/database.config';
+import { s3Client, BUCKET_NAME, MINIO_PUBLIC_URL } from '../config/storage.config.js';
+import prisma from '../config/database.config.js';
 import {
   generateUniqueFilename,
   getS3Key,
   getFileTypeCategory,
-} from '../utils/file.utils';
+} from '../utils/file.utils.js';
 
 interface ProcessedImage {
   buffer: Buffer;
@@ -84,7 +84,7 @@ async function uploadToS3(
   await s3Client.send(command);
 
   // Return the public URL (MinIO format)
-  return `http://localhost:9000/${BUCKET_NAME}/${key}`;
+  return `${MINIO_PUBLIC_URL}/${BUCKET_NAME}/${key}`;
 }
 
 /**
@@ -159,8 +159,8 @@ export async function uploadMomentMedia(
   // Transform to include URLs
   return {
     ...mediaFile,
-    url: `http://localhost:9000/${BUCKET_NAME}/${storageKey}`,
-    thumbnailUrl: thumbnailKey ? `http://localhost:9000/${BUCKET_NAME}/${thumbnailKey}` : null,
+    url: `${MINIO_PUBLIC_URL}/${BUCKET_NAME}/${storageKey}`,
+    thumbnailUrl: thumbnailKey ? `${MINIO_PUBLIC_URL}/${BUCKET_NAME}/${thumbnailKey}` : null,
     fileName: originalFilename,
   };
 }
@@ -171,9 +171,9 @@ export async function uploadMomentMedia(
 export function transformMediaFile(mediaFile: any) {
   return {
     ...mediaFile,
-    url: `http://localhost:9000/${BUCKET_NAME}/${mediaFile.storageKey}`,
+    url: `${MINIO_PUBLIC_URL}/${BUCKET_NAME}/${mediaFile.storageKey}`,
     thumbnailUrl: mediaFile.thumbnailKey
-      ? `http://localhost:9000/${BUCKET_NAME}/${mediaFile.thumbnailKey}`
+      ? `${MINIO_PUBLIC_URL}/${BUCKET_NAME}/${mediaFile.thumbnailKey}`
       : null,
     fileName: mediaFile.originalFilename,
   };

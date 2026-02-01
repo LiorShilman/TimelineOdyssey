@@ -1,11 +1,11 @@
 import { Router } from 'express';
-import { authMiddleware } from '../middleware/auth.middleware';
-import { uploadMultiple } from '../middleware/upload.middleware';
+import { authMiddleware } from '../middleware/auth.middleware.js';
+import { uploadMultiple } from '../middleware/upload.middleware.js';
 import {
   uploadMediaController,
   getMomentMediaController,
   deleteMediaController,
-} from '../controllers/media.controller';
+} from '../controllers/media.controller.js';
 
 const router = Router();
 

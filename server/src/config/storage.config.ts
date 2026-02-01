@@ -21,6 +21,9 @@ export const s3Client = new S3Client({
 
 export const BUCKET_NAME = AWS_BUCKET_NAME;
 
+// Public URL for media files (may differ from internal endpoint when behind NAT/proxy)
+export const MINIO_PUBLIC_URL = process.env.MINIO_PUBLIC_URL || AWS_ENDPOINT;
+
 // Initialize bucket (create if doesn't exist)
 async function initializeBucket() {
   try {

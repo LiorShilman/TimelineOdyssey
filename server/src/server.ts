@@ -3,6 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
 import { createServer } from 'http';
+import http from 'http';
 
 // Load environment variables
 dotenv.config();
@@ -70,8 +71,16 @@ app.use('/api/media', mediaRoutes);
 app.use('/api/tags', tagRoutes);
 app.use('/api/relations', relationRoutes);
 
-// Future routes will be added here:
-// app.use('/api/timeline', timelineRoutes);
+// MinIO proxy — serves media files without exposing port 9000 externally
+app.use('/media', (req, res) => {
+  const target = `http://localhost:9000${req.url}`;
+  http.get(target, (s3Res) => {
+    res.writeHead(s3Res.statusCode || 500, s3Res.headers);
+    s3Res.pipe(res);
+  }).on('error', () => {
+    res.status(502).end();
+  });
+});
 
 // 404 handler
 app.use(notFoundMiddleware);

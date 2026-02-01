@@ -1,7 +1,7 @@
 import multer from 'multer';
 import { Request } from 'express';
-import { MAX_FILE_SIZE, MAX_FILES_PER_MOMENT } from '../config/storage.config';
-import { isValidFileType } from '../utils/file.utils';
+import { MAX_FILE_SIZE, MAX_FILES_PER_MOMENT } from '../config/storage.config.js';
+import { isValidFileType } from '../utils/file.utils.js';
 
 // Use memory storage for processing before uploading to S3
 const storage = multer.memoryStorage();

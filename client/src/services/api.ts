@@ -1,4 +1,4 @@
-import axios, { AxiosInstance, AxiosError } from 'axios';
+import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
@@ -10,6 +10,27 @@ export const setAuthToken = (token: string | null) => {
 };
 
 export const getAuthToken = () => authToken;
+
+// Refresh token logic — uses raw axios to avoid interceptor recursion
+let isRefreshing = false;
+let refreshPromise: Promise<string | null> | null = null;
+
+async function tryRefresh(): Promise<string | null> {
+  const stored = localStorage.getItem('refreshToken');
+  if (!stored) return null;
+
+  try {
+    const res = await axios.post(`${API_URL}/auth/refresh`, { refreshToken: stored });
+    const newAccessToken = res.data?.data?.accessToken;
+    if (newAccessToken) {
+      setAuthToken(newAccessToken);
+      return newAccessToken;
+    }
+  } catch {
+    localStorage.removeItem('refreshToken');
+  }
+  return null;
+}
 
 class ApiService {
   private instance: AxiosInstance;
@@ -35,15 +56,34 @@ class ApiService {
       (error) => Promise.reject(error)
     );
 
-    // Response interceptor
+    // Response interceptor — attempts token refresh on 401 before redirecting
     this.instance.interceptors.response.use(
       (response) => response,
       async (error: AxiosError) => {
-        if (error.response?.status === 401) {
-          // Token expired, clear token
-          setAuthToken(null);
-          if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
-            window.location.href = '/login';
+        const originalConfig = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
+
+        if (error.response?.status === 401 && !originalConfig?._retry) {
+          originalConfig._retry = true;
+
+          // Only one refresh at a time; other 401s wait for the same promise
+          if (!isRefreshing) {
+            isRefreshing = true;
+            refreshPromise = tryRefresh();
+          }
+
+          const newToken = await refreshPromise;
+          isRefreshing = false;
+          refreshPromise = null;
+
+          if (newToken && originalConfig) {
+            originalConfig.headers.Authorization = `Bearer ${newToken}`;
+            return this.instance.request(originalConfig);
+          }
+
+          // Refresh failed — redirect to login
+          const base = import.meta.env.BASE_URL;
+          if (typeof window !== 'undefined' && !window.location.pathname.endsWith('/login')) {
+            window.location.href = base + 'login';
           }
         }
         return Promise.reject(error);

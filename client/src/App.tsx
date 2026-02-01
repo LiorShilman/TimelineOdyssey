@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import LoginPage from './pages/auth/LoginPage';
@@ -8,16 +9,20 @@ import ProtectedRoute from './components/auth/ProtectedRoute';
 import { useAuthStore } from './stores/authStore';
 
 function App() {
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, isLoading, initAuth } = useAuthStore();
+
+  useEffect(() => {
+    initAuth();
+  }, []);
 
   return (
-    <Router>
+    <Router basename={import.meta.env.BASE_URL.replace(/\/+$/, '')}>
       <div className="min-h-screen bg-gray-900 text-white">
         <Routes>
-          {/* Redirect root based on auth status */}
+          {/* Redirect root based on auth status — wait for initAuth if restoring session */}
           <Route
             path="/"
-            element={isAuthenticated ? <Navigate to="/galaxy" replace /> : <Navigate to="/login" replace />}
+            element={isLoading ? null : (isAuthenticated ? <Navigate to="/galaxy" replace /> : <Navigate to="/login" replace />)}
           />
 
           {/* Public routes */}
