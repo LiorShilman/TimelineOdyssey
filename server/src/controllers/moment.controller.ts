@@ -41,7 +41,7 @@ export async function createMomentController(
       flagged,
     });
 
-    res.status(201).json({
+    return res.status(201).json({
       message: 'Moment created successfully',
       data: moment,
     });
@@ -53,7 +53,7 @@ export async function createMomentController(
       });
     }
 
-    next(error);
+    return next(error);
   }
 }
 
@@ -84,12 +84,12 @@ export async function getMomentsController(
       includeDeleted: includeDeleted === 'true',
     });
 
-    res.status(200).json({
+    return res.status(200).json({
       data: moments,
       count: moments.length,
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 }
 
@@ -114,7 +114,7 @@ export async function getMomentByIdController(
 
     const moment = await momentService.getMomentById(id, req.user.userId);
 
-    res.status(200).json({
+    return res.status(200).json({
       data: moment,
     });
   } catch (error: any) {
@@ -125,7 +125,7 @@ export async function getMomentByIdController(
       });
     }
 
-    next(error);
+    return next(error);
   }
 }
 
@@ -162,7 +162,7 @@ export async function updateMomentController(
       flagged,
     });
 
-    res.status(200).json({
+    return res.status(200).json({
       message: 'Moment updated successfully',
       data: moment,
     });
@@ -181,7 +181,7 @@ export async function updateMomentController(
       });
     }
 
-    next(error);
+    return next(error);
   }
 }
 
@@ -206,7 +206,7 @@ export async function deleteMomentController(
 
     await momentService.deleteMoment(id, req.user.userId);
 
-    res.status(200).json({
+    return res.status(200).json({
       message: 'Moment deleted successfully',
     });
   } catch (error: any) {
@@ -217,7 +217,7 @@ export async function deleteMomentController(
       });
     }
 
-    next(error);
+    return next(error);
   }
 }
 
@@ -242,7 +242,7 @@ export async function restoreMomentController(
 
     const moment = await momentService.restoreMoment(id, req.user.userId);
 
-    res.status(200).json({
+    return res.status(200).json({
       message: 'Moment restored successfully',
       data: moment,
     });
@@ -254,7 +254,7 @@ export async function restoreMomentController(
       });
     }
 
-    next(error);
+    return next(error);
   }
 }
 
@@ -277,10 +277,10 @@ export async function getMomentStatsController(
 
     const stats = await momentService.getMomentStats(req.user.userId);
 
-    res.status(200).json({
+    return res.status(200).json({
       data: stats,
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 }

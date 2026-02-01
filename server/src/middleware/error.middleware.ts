@@ -7,9 +7,9 @@ import logger from '../utils/logger.utils.js';
 export function notFoundMiddleware(
   req: Request,
   res: Response,
-  next: NextFunction
+  _next: NextFunction
 ) {
-  res.status(404).json({
+  return res.status(404).json({
     error: 'Not Found',
     message: `Cannot ${req.method} ${req.path}`,
   });
@@ -22,7 +22,7 @@ export function errorMiddleware(
   err: any,
   req: Request,
   res: Response,
-  next: NextFunction
+  _next: NextFunction
 ) {
   // Log error
   logger.error('Error occurred:', {
@@ -61,7 +61,7 @@ export function errorMiddleware(
   const statusCode = err.statusCode || 500;
   const message = err.message || 'Internal Server Error';
 
-  res.status(statusCode).json({
+  return res.status(statusCode).json({
     error: statusCode === 500 ? 'Internal Server Error' : 'Error',
     message,
     ...(process.env.NODE_ENV === 'development' && {

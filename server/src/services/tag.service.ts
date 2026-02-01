@@ -1,5 +1,5 @@
 import prisma from '../config/database.config.js';
-import type { Tag, MomentTag } from '@prisma/client';
+import type { Tag } from '@prisma/client';
 
 export interface CreateTagDto {
   name: string;

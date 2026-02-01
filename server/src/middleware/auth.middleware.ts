@@ -46,7 +46,7 @@ export function authMiddleware(
     // Attach user info to request
     req.user = payload;
 
-    next();
+    return next();
   } catch (error: any) {
     logger.warn(`Authentication failed: ${error.message}`);
 
@@ -63,7 +63,7 @@ export function authMiddleware(
  */
 export function optionalAuthMiddleware(
   req: Request,
-  res: Response,
+  _res: Response,
   next: NextFunction
 ) {
   try {
@@ -75,9 +75,9 @@ export function optionalAuthMiddleware(
       req.user = payload;
     }
 
-    next();
+    return next();
   } catch (error) {
     // Ignore token errors, just proceed without user
-    next();
+    return next();
   }
 }

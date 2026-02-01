@@ -29,7 +29,7 @@ export async function registerController(
       lastName,
     });
 
-    res.status(201).json({
+    return res.status(201).json({
       message: 'User registered successfully',
       data: result,
     });
@@ -51,7 +51,7 @@ export async function registerController(
       });
     }
 
-    next(error);
+    return next(error);
   }
 }
 
@@ -77,7 +77,7 @@ export async function loginController(
 
     const result = await authService.login({ email, password });
 
-    res.status(200).json({
+    return res.status(200).json({
       message: 'Login successful',
       data: result,
     });
@@ -92,7 +92,7 @@ export async function loginController(
       });
     }
 
-    next(error);
+    return next(error);
   }
 }
 
@@ -110,11 +110,11 @@ export async function logoutController(
     // Here we just acknowledge the logout request
     logger.info(`User logged out: ${req.user?.email}`);
 
-    res.status(200).json({
+    return res.status(200).json({
       message: 'Logout successful',
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 }
 
@@ -147,7 +147,7 @@ export async function refreshTokenController(
       email: payload.email,
     });
 
-    res.status(200).json({
+    return res.status(200).json({
       message: 'Token refreshed successfully',
       data: {
         accessToken: newAccessToken,
@@ -161,6 +161,6 @@ export async function refreshTokenController(
       });
     }
 
-    next(error);
+    return next(error);
   }
 }

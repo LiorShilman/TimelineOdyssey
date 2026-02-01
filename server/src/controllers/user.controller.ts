@@ -20,7 +20,7 @@ export async function getCurrentUserController(
 
     const user = await authService.getUserById(req.user.userId);
 
-    res.status(200).json({
+    return res.status(200).json({
       data: user,
     });
   } catch (error: any) {
@@ -31,7 +31,7 @@ export async function getCurrentUserController(
       });
     }
 
-    next(error);
+    return next(error);
   }
 }
 
@@ -60,11 +60,11 @@ export async function updateCurrentUserController(
       avatarUrl,
     });
 
-    res.status(200).json({
+    return res.status(200).json({
       message: 'Profile updated successfully',
       data: user,
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 }

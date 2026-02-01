@@ -6,13 +6,13 @@ import * as tagService from '../services/tag.service.js';
  */
 export async function getTags(req: Request, res: Response) {
   try {
-    const userId = req.user!.id;
+    const userId = req.user!.userId;
     const tags = await tagService.getUserTags(userId);
 
-    res.json({ tags });
+    return res.json({ tags });
   } catch (error) {
     console.error('Get tags error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       error: error instanceof Error ? error.message : 'Failed to get tags'
     });
   }
@@ -23,7 +23,7 @@ export async function getTags(req: Request, res: Response) {
  */
 export async function createTag(req: Request, res: Response) {
   try {
-    const userId = req.user!.id;
+    const userId = req.user!.userId;
     const { name, color } = req.body;
 
     if (!name || typeof name !== 'string' || name.trim().length === 0) {
@@ -32,7 +32,7 @@ export async function createTag(req: Request, res: Response) {
 
     const tag = await tagService.createTag(userId, { name, color });
 
-    res.status(201).json({ tag });
+    return res.status(201).json({ tag });
   } catch (error) {
     console.error('Create tag error:', error);
 
@@ -41,7 +41,7 @@ export async function createTag(req: Request, res: Response) {
       return res.status(409).json({ error: 'Tag with this name already exists' });
     }
 
-    res.status(500).json({
+    return res.status(500).json({
       error: error instanceof Error ? error.message : 'Failed to create tag'
     });
   }
@@ -52,13 +52,13 @@ export async function createTag(req: Request, res: Response) {
  */
 export async function updateTag(req: Request, res: Response) {
   try {
-    const userId = req.user!.id;
+    const userId = req.user!.userId;
     const { tagId } = req.params;
     const { name, color } = req.body;
 
     const tag = await tagService.updateTag(tagId, userId, { name, color });
 
-    res.json({ tag });
+    return res.json({ tag });
   } catch (error) {
     console.error('Update tag error:', error);
 
@@ -66,7 +66,7 @@ export async function updateTag(req: Request, res: Response) {
       return res.status(404).json({ error: 'Tag not found' });
     }
 
-    res.status(500).json({
+    return res.status(500).json({
       error: error instanceof Error ? error.message : 'Failed to update tag'
     });
   }
@@ -77,12 +77,12 @@ export async function updateTag(req: Request, res: Response) {
  */
 export async function deleteTag(req: Request, res: Response) {
   try {
-    const userId = req.user!.id;
+    const userId = req.user!.userId;
     const { tagId } = req.params;
 
     await tagService.deleteTag(tagId, userId);
 
-    res.status(204).send();
+    return res.status(204).send();
   } catch (error) {
     console.error('Delete tag error:', error);
 
@@ -90,7 +90,7 @@ export async function deleteTag(req: Request, res: Response) {
       return res.status(404).json({ error: 'Tag not found' });
     }
 
-    res.status(500).json({
+    return res.status(500).json({
       error: error instanceof Error ? error.message : 'Failed to delete tag'
     });
   }
@@ -101,7 +101,7 @@ export async function deleteTag(req: Request, res: Response) {
  */
 export async function attachTag(req: Request, res: Response) {
   try {
-    const userId = req.user!.id;
+    const userId = req.user!.userId;
     const { momentId, tagId } = req.body;
 
     if (!momentId || !tagId) {
@@ -110,7 +110,7 @@ export async function attachTag(req: Request, res: Response) {
 
     await tagService.attachTagToMoment(momentId, tagId, userId);
 
-    res.status(200).json({ success: true });
+    return res.status(200).json({ success: true });
   } catch (error) {
     console.error('Attach tag error:', error);
 
@@ -118,7 +118,7 @@ export async function attachTag(req: Request, res: Response) {
       return res.status(404).json({ error: error.message });
     }
 
-    res.status(500).json({
+    return res.status(500).json({
       error: error instanceof Error ? error.message : 'Failed to attach tag'
     });
   }
@@ -129,12 +129,12 @@ export async function attachTag(req: Request, res: Response) {
  */
 export async function detachTag(req: Request, res: Response) {
   try {
-    const userId = req.user!.id;
+    const userId = req.user!.userId;
     const { momentId, tagId } = req.params;
 
     await tagService.detachTagFromMoment(momentId, tagId, userId);
 
-    res.status(204).send();
+    return res.status(204).send();
   } catch (error) {
     console.error('Detach tag error:', error);
 
@@ -142,7 +142,7 @@ export async function detachTag(req: Request, res: Response) {
       return res.status(404).json({ error: error.message });
     }
 
-    res.status(500).json({
+    return res.status(500).json({
       error: error instanceof Error ? error.message : 'Failed to detach tag'
     });
   }
@@ -153,12 +153,12 @@ export async function detachTag(req: Request, res: Response) {
  */
 export async function getMomentsByTag(req: Request, res: Response) {
   try {
-    const userId = req.user!.id;
+    const userId = req.user!.userId;
     const { tagId } = req.params;
 
     const moments = await tagService.getMomentsByTag(tagId, userId);
 
-    res.json({ moments });
+    return res.json({ moments });
   } catch (error) {
     console.error('Get moments by tag error:', error);
 
@@ -166,7 +166,7 @@ export async function getMomentsByTag(req: Request, res: Response) {
       return res.status(404).json({ error: 'Tag not found' });
     }
 
-    res.status(500).json({
+    return res.status(500).json({
       error: error instanceof Error ? error.message : 'Failed to get moments'
     });
   }

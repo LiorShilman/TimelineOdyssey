@@ -54,7 +54,7 @@ app.use((req: express.Request, _res: express.Response, next: express.NextFunctio
 });
 
 // Health check route
-app.get('/api/health', (req, res) => {
+app.get('/api/health', (_req, res) => {
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),

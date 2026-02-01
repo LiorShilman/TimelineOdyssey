@@ -35,12 +35,12 @@ export async function createRelationController(
 
     await relationService.createRelation(req.user.userId, momentId, relatedMomentId, relationType);
 
-    res.status(201).json({ message: 'Relation created successfully' });
+    return res.status(201).json({ message: 'Relation created successfully' });
   } catch (error: any) {
     if (error.message.includes('not found') || error.message.includes('Cannot relate')) {
       return res.status(400).json({ error: 'Validation Error', message: error.message });
     }
-    next(error);
+    return next(error);
   }
 }
 
@@ -62,11 +62,11 @@ export async function deleteRelationController(
 
     await relationService.deleteRelation(req.user.userId, momentId, relatedMomentId);
 
-    res.status(200).json({ message: 'Relation deleted successfully' });
+    return res.status(200).json({ message: 'Relation deleted successfully' });
   } catch (error: any) {
     if (error.message === 'Moment not found') {
       return res.status(404).json({ error: 'Not Found', message: error.message });
     }
-    next(error);
+    return next(error);
   }
 }

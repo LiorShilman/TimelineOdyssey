@@ -8,7 +8,7 @@ import * as mediaService from '../services/media.service';
 export async function uploadMediaController(
   req: Request,
   res: Response,
-  next: NextFunction
+  _next: NextFunction
 ) {
   try {
     const { momentId } = req.params;
@@ -26,13 +26,13 @@ export async function uploadMediaController(
       )
     );
 
-    res.status(201).json({
+    return res.status(201).json({
       message: 'Files uploaded successfully',
       media: uploadedMedia,
     });
   } catch (error: any) {
     console.error('Upload error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       error: 'Failed to upload media',
       message: error.message,
       details: process.env.NODE_ENV === 'development' ? error.stack : undefined,
@@ -54,9 +54,9 @@ export async function getMomentMediaController(
 
     const media = await mediaService.getMomentMedia(momentId);
 
-    res.json(media);
+    return res.json(media);
   } catch (error: any) {
-    next(error);
+    return next(error);
   }
 }
 
@@ -75,7 +75,7 @@ export async function deleteMediaController(
 
     await mediaService.deleteMediaFile(mediaId, userId);
 
-    res.json({ message: 'Media file deleted successfully' });
+    return res.json({ message: 'Media file deleted successfully' });
   } catch (error: any) {
     if (error.message === 'Media file not found') {
       return res.status(404).json({ error: 'Not Found', message: error.message });
@@ -83,6 +83,6 @@ export async function deleteMediaController(
     if (error.message === 'Unauthorized') {
       return res.status(403).json({ error: 'Forbidden', message: error.message });
     }
-    next(error);
+    return next(error);
   }
 }
